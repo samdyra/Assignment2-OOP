@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"examblock"},{"l":"examblock.controller"},{"l":"examblock.given"},{"l":"examblock.model"},{"l":"examblock.view"},{"l":"examblock.view.components"}];updateSearchResults();
