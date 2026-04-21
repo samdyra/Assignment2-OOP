@@ -33,10 +33,11 @@ public class Subject implements StreamManager, ManageableListItem {
             throw new RuntimeException("EOF reading Subject #" + nthItem);
         }
 
-        var bits = heading.split("\\. ");
-        int index = Utilities.toInt(bits[0], "Number format exception parsing Subject "
-                + nthItem
-                + " header");
+        // split by period followed by space
+        String[] firstLine = heading.split("\\. ");
+        int index = Utilities.toInt(firstLine[0], "Number format exception parsing Subject "
+                + nthItem + " header");
+
         if (index != nthItem) {
             throw new RuntimeException("Subject index out of sync!");
         }
@@ -53,13 +54,13 @@ public class Subject implements StreamManager, ManageableListItem {
             throw new RuntimeException("EOF reading Subject #" + nthItem);
         }
 
+        // remove double quotes
         this.description = sanitiseDescription(description.substring(1, description.length() - 1));
     }
 
     @Override
     public String getFullDetail() {
-        return title.toUpperCase() + System.lineSeparator()
-                + "\"" + description + "\"" + System.lineSeparator();
+        return title.toUpperCase() + System.lineSeparator() + "\"" + description + "\"" + System.lineSeparator();
     }
 
     @Override
