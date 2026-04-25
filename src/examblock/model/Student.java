@@ -12,11 +12,11 @@ public class Student implements StreamManager, ManageableListItem {
     private Long lui;
     private String givenNames;
     private String familyName;
-    private int day;
-    private int month;
-    private int year;
-    private boolean aara;
+    private LocalDate dob;
+    private Boolean aara;
     private String house;
+    private SubjectList subjects;
+    private ExamList exams;
 
     /**
      * Constructs a new Student object with no AARA requirements by default.
@@ -47,13 +47,7 @@ public class Student implements StreamManager, ManageableListItem {
     public Student(Long lui, String givenNames, String familyName,
                    int day, int month, int year, String house,
                    Registry registry) {
-        this.lui = lui;
-        this.givenNames = givenNames;
-        this.familyName = familyName;
-        this.day = day;
-        this.month = month;
-        this.year = year;
-        this.house = house;
+        this(lui, givenNames, familyName, day, month, year, house, false, registry);
 
         registry.add(this, Student.class);
     }
@@ -91,6 +85,14 @@ public class Student implements StreamManager, ManageableListItem {
     public Student(Long lui, String givenNames, String familyName,
                    int day, int month, int year, String house,
                    Boolean aara, Registry registry) {
+        this.lui = lui;
+        this.givenNames = sanitiseName(givenNames);
+        this.familyName = sanitiseName(familyName);
+        this.dob = LocalDate.of(year, month, day);
+        this.house = house;
+        this.aara = aara;
+
+        registry.add(this, Student.class);
     }
 
     /**
@@ -101,10 +103,12 @@ public class Student implements StreamManager, ManageableListItem {
      *                 Subject names
      * @param nthItem  the index number of this serialized object
      * @throws IOException      on any read failure
-     * @throws RuntimeException
+     * @throws RuntimeException on any runtime exception
      */
     public Student(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
+        streamIn(br, registry, nthItem);
+        registry.add(this, Student.class);
     }
 
     /**
@@ -118,7 +122,11 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the sanitised string
      */
     public String sanitiseName(String text) {
-        return null;
+        // remove chars that are not alphabetic, hyphens, apostrophes, or spaces
+        text = text.replaceAll("[^a-zA-Z\\-' ]", "");
+        // Handle extra spaces
+        text = text.trim().replaceAll("\\s+", " ");
+        return text;
     }
 
     /**
@@ -141,6 +149,27 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public void streamOut(BufferedWriter bw, int nthItem) throws IOException {
+        String fullName = givenNames + " " + familyName;
+        bw.write(nthItem + ". " + fullName.toUpperCase() + System.lineSeparator());
+        bw.write("LUI: " + lui
+                + ", Family Name: " + familyName
+                + ", Given Name(s): " + givenNames
+                + ", Date of Birth: " + dob
+                + ", House: " + house
+                + ", AARA: " + aara
+                + System.lineSeparator());
+
+        StringBuilder sb = new StringBuilder("Subjects: ");
+        boolean firstSubject = true;
+        for (Subject s : subjects.all()) {
+            // only add leading comma in the second and the next subjects (if any)
+            if (!firstSubject) {
+                sb.append(", ");
+            }
+            sb.append(s.getTitle());
+            firstSubject = false;
+        }
+        bw.write(sb + System.lineSeparator());
     }
 
     /**
