@@ -49,7 +49,7 @@ public class Unit implements StreamManager, ManageableListItem {
      * @param registry the global object registry, needed to resolve textual Subject names
      * @param nthItem  the index number of this serialized object
      * @throws IOException      on any read failure
-     * @throws RuntimeException
+     * @throws RuntimeException  any runtime error
      */
     public Unit(BufferedReader br, Registry registry, int nthItem) throws IOException, RuntimeException {
         streamIn(br, registry, nthItem);
