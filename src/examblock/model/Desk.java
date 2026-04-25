@@ -9,7 +9,10 @@ import java.io.IOException;
  */
 public class Desk {
     private int deskNumber;
-    private Student assignedStudent;
+    private String familyName;
+    private String givenAndInit;
+    private long lui;
+    private String examName;
 
     /**
      * Constructs a Desk. Assigns the integer deskNumber as the numerical identifier
@@ -17,15 +20,13 @@ public class Desk {
      *
      * @param deskNumber the non-zero positive integer desk number.
      */
-    public Desk(int deskNumber) throws Exception {
-        if (deskNumber <= 0) {
-            throw new Exception("ID must not be positive number");
-        }
-
+    public Desk(int deskNumber) {
         this.deskNumber = deskNumber;
-        this.assignedStudent = "";
+        this.familyName = "";
+        this.givenAndInit = "";
+        this.lui = 0;
+        this.examName = "";
     }
-
     /**
      * Gets the number of this desk.
      *
@@ -41,7 +42,7 @@ public class Desk {
      * @return the Student, or an empty string if not allocated
      */
     public String deskStudent() {
-        return this.assignedStudent;
+        return familyName.isEmpty() ? "" : familyName + ", " + givenAndInit;
     }
 
     /**
@@ -50,7 +51,7 @@ public class Desk {
      * @return The LUI of the student assigned to this desk.
      */
     public long deskLui() {
-        return 0;
+        return this.lui;
     }
 
     /**
@@ -59,7 +60,7 @@ public class Desk {
      * @return The family name of the student assigned to this desk.
      */
     public String deskFamilyName() {
-        return null;
+        return this.familyName;
     }
 
     /**
@@ -71,7 +72,7 @@ public class Desk {
      * @return The first given name and initial of the student assigned to this desk.
      */
     public String deskGivenAndInit() {
-        return null;
+        return this.givenAndInit;
     }
 
     /**
@@ -80,6 +81,15 @@ public class Desk {
      * @param student student to assign
      */
     public void setStudent(Student student) {
+        this.lui = student.getLui();
+        this.familyName = student.familyName();
+        // first name and middle initial
+        String[] names = student.givenNames().split(" ");
+        if (names.length > 1) {
+            this.givenAndInit = names[0] + " " + names[1].charAt(0) + ".";
+        } else {
+            this.givenAndInit = names[0];
+        }
     }
 
     /**
@@ -88,6 +98,7 @@ public class Desk {
      * @param givenAndInit new name
      */
     public void setGivenAndInit(String givenAndInit) {
+        this.givenAndInit = givenAndInit;
     }
 
     /**
@@ -96,6 +107,7 @@ public class Desk {
      * @param exam exam to allocate
      */
     public void setExam(Exam exam) {
+        this.examName = exam.abbrevShortTitle();
     }
 
     /**
@@ -104,7 +116,7 @@ public class Desk {
      * @return the exam at this desk
      */
     public String deskExam() {
-        return null;
+        return this.examName;
     }
 
     /**
@@ -115,7 +127,10 @@ public class Desk {
      */
     @Override
     public String toString() {
-        return null;
+        if (familyName.isEmpty()) {
+            return "Desk " + deskNumber + ":";
+        }
+        return "Desk " + deskNumber + ": " + familyName + ", " + givenAndInit;
     }
 
     /**
