@@ -48,8 +48,6 @@ public class Student implements StreamManager, ManageableListItem {
                    int day, int month, int year, String house,
                    Registry registry) {
         this(lui, givenNames, familyName, day, month, year, house, false, registry);
-
-        registry.add(this, Student.class);
     }
 
     /**
@@ -91,6 +89,9 @@ public class Student implements StreamManager, ManageableListItem {
         this.dob = LocalDate.of(year, month, day);
         this.house = house;
         this.aara = aara;
+
+        this.subjects = new SubjectList(registry);
+        this.exams = new ExamList(registry);
 
         registry.add(this, Student.class);
     }
@@ -191,6 +192,77 @@ public class Student implements StreamManager, ManageableListItem {
     @Override
     public void streamIn(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
+        this.subjects = new SubjectList(registry);
+        this.exams = new ExamList(registry);
+
+        // firstLine example: "1. LIAM ALEXANDER SMITH"
+        String header = Utilities.getLine(br);
+        if (header == null) {
+            throw new RuntimeException("EOF reading Student #" + nthItem);
+        }
+
+        // split by period and space
+        String[] partsOfHeader = header.split("\\. ");
+        int index = Utilities.toInt(partsOfHeader[0], "Number format exception parsing Student "
+                + nthItem + " header");
+        if (index != nthItem) {
+            throw new RuntimeException("Student index out of sync!");
+        }
+
+        // second line example: LUI: 9999365663, Family Name: Smith, Given Name(s): Liam Alexander,
+        // Date of Birth: 2007-12-08, House: Blue, AARA: false
+        String studentDetails = Utilities.getLine(br);
+        if (studentDetails == null) {
+            throw new RuntimeException("EOF reading Student #" + nthItem);
+        }
+
+        // get each parts of the student details
+        String[] partsOfDetails = studentDetails.split(",");
+        for (String detail : partsOfDetails) {
+            String[] pairOfDetail = Utilities.keyValuePair(detail.trim());
+            if (pairOfDetail == null) {
+                continue;
+            }
+            switch (pairOfDetail[0]) {
+                case "LUI":
+                    this.lui = Utilities.toLong(pairOfDetail[1],
+                            "Number format exception parsing Student " + nthItem + " LUI");
+                    break;
+                case "Family Name":
+                    this.familyName = sanitiseName(pairOfDetail[1]);
+                    break;
+                case "Given Name(s)":
+                    this.givenNames = sanitiseName(pairOfDetail[1]);
+                    break;
+                case "Date of Birth":
+                    this.dob = Utilities.toLocalDate(pairOfDetail[1],
+                            "Date format error parsing Student " + nthItem + " DOB");
+                    break;
+                case "House":
+                    this.house = pairOfDetail[1];
+                    break;
+                case "AARA":
+                    this.aara = Utilities.toBoolean(pairOfDetail[1],
+                            "Boolean format error parsing Student " + nthItem + " AARA");
+                    break;
+            }
+        }
+
+        // line 3 example: "Subjects: Essential English, Essential Mathematics, ..."
+        String subjectLine = Utilities.getLine(br);
+        if (subjectLine == null) {
+            throw new RuntimeException("EOF reading Student #" + nthItem);
+        }
+
+        String[] subjectParts = Utilities.keyValuePair(subjectLine);
+        if (subjectParts != null) {
+            String[] subjectNames = subjectParts[1].split(",");
+            for (String name : subjectNames) {
+                // get the subject from registry
+                Subject subject = registry.get(name.trim(), Subject.class);
+                subjects.add(subject);
+            }
+        }
     }
 
     /**
@@ -201,7 +273,27 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public String getFullDetail() {
-        return null;
+        StringBuilder sb = new StringBuilder();
+        sb.append("LUI: ").append(lui)
+                .append(", Family Name: ").append(familyName)
+                .append(", Given Name(s): ").append(givenNames)
+                .append(", Date of Birth: ").append(dob)
+                .append(", House: ").append(house)
+                .append(", AARA: ").append(aara)
+                .append(System.lineSeparator());
+
+        sb.append("Subjects: ");
+        boolean firstSubject = true;
+        for (Subject s : subjects.all()) {
+            // only add leading comma in the second and the next subjects (if any)
+            if (!firstSubject) {
+                sb.append(", ");
+            }
+            sb.append(s.getTitle());
+            firstSubject = false;
+        }
+        sb.append(System.lineSeparator());
+        return sb.toString();
     }
 
     /**
@@ -213,7 +305,7 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public Object[] toTableRow() {
-        return null;
+        return new Object[]{familyName, givenNames, lui, house, aara};
     }
 
     /**
@@ -223,7 +315,7 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public String getId() {
-        return null;
+        return String.valueOf(lui);
     }
 
     /**
@@ -234,6 +326,7 @@ public class Student implements StreamManager, ManageableListItem {
      *            entire cohort.
      */
     public void changeLui(Long lui) {
+        this.lui = lui;
     }
 
     /**
@@ -247,6 +340,7 @@ public class Student implements StreamManager, ManageableListItem {
      *                   spaces are ignored.
      */
     public void setGiven(String givenNames) {
+        this.givenNames = sanitiseName(givenNames);
     }
 
     /**
@@ -260,6 +354,7 @@ public class Student implements StreamManager, ManageableListItem {
      *                   spaces are ignored.
      */
     public void setFamily(String familyName) {
+        this.familyName = sanitiseName(familyName);
     }
 
     /**
@@ -268,7 +363,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the 10-digit LUI of this student as a Long.
      */
     public Long getLui() {
-        return null;
+        return this.lui;
     }
 
     /**
@@ -277,7 +372,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the given name(s) of this student.
      */
     public String givenNames() {
-        return null;
+        return this.givenNames;
     }
 
     /**
@@ -286,7 +381,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the first given name of this student.
      */
     public String firstName() {
-        return null;
+        return this.givenNames.split(" ")[0];
     }
 
     /**
@@ -295,7 +390,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the family name of this student.
      */
     public String familyName() {
-        return null;
+        return this.familyName;
     }
 
     /**
@@ -304,7 +399,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the first given name and family name of this student.
      */
     public String shortName() {
-        return null;
+        return firstName() + " " + familyName;
     }
 
     /**
@@ -313,7 +408,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return all the given name(s) and family name of this student.
      */
     public String fullName() {
-        return null;
+        return givenNames + " " + familyName;
     }
 
     /**
@@ -322,7 +417,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the date of birth of this student.
      */
     public LocalDate getDob() {
-        return null;
+        return this.dob;
     }
 
     /**
@@ -331,7 +426,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the house colour of this student.
      */
     public String getHouse() {
-        return null;
+        return this.house;
     }
 
     /**
@@ -341,7 +436,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return true if this student is an AARA student, false otherwise.
      */
     public Boolean isAara() {
-        return null;
+        return this.aara;
     }
 
     /**
@@ -350,7 +445,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the reference to this student's SubjectList.
      */
     public SubjectList getSubjects() {
-        return null;
+        return this.subjects;
     }
 
     /**
@@ -359,7 +454,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @return the reference to this student's ExamList.
      */
     public ExamList getExams() {
-        return null;
+        return this.exams;
     }
 
     /**
@@ -368,6 +463,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @param subject the Subject being added to this student.
      */
     public void addSubject(Subject subject) {
+        subjects.add(subject);
     }
 
     /**
@@ -376,6 +472,8 @@ public class Student implements StreamManager, ManageableListItem {
      * @param unit the Unit being added to this student.
      */
     public void addUnit(Unit unit) {
+        // student has no unit list, add the unit's parent subject instead
+        addSubject(unit.getSubject());
     }
 
     /**
@@ -384,6 +482,7 @@ public class Student implements StreamManager, ManageableListItem {
      * @param exam the Exam being added to this student.
      */
     public void addExam(Exam exam) {
+        exams.add(exam);
     }
 
     /**
@@ -393,6 +492,13 @@ public class Student implements StreamManager, ManageableListItem {
      * @param subject the Subject being removed from this student.
      */
     public void removeSubject(Subject subject) {
+        subjects.remove(subject);
+        // remove exams associated with this subject
+        for (Exam exam : exams.all()) {
+            if (exam.getSubject().equals(subject)) {
+                exams.remove(exam);
+            }
+        }
     }
 
     /**
@@ -403,7 +509,7 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public String toString() {
-        return null;
+        return fullName().toUpperCase() + System.lineSeparator();
     }
 
     /**
@@ -414,7 +520,19 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public boolean equals(Object o) {
-        return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Student other = (Student) o;
+        return other.lui.equals(this.lui)
+                && other.givenNames.equals(this.givenNames)
+                && other.familyName.equals(this.familyName)
+                && other.dob.equals(this.dob)
+                && other.house.equals(this.house)
+                && other.aara.equals(this.aara);
     }
 
     /**
@@ -424,6 +542,11 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public int hashCode() {
-        return 0;
+        return this.lui.hashCode()
+                + 2 * this.givenNames.hashCode()
+                + 3 * this.familyName.hashCode()
+                + 5 * this.dob.hashCode()
+                + 7 * this.house.hashCode()
+                + 11 * this.aara.hashCode();
     }
 }
