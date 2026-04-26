@@ -87,6 +87,31 @@ public class Venue implements StreamManager, ManageableListItem {
      */
     @Override
     public void streamOut(BufferedWriter bw, int nthItem) throws IOException {
+        // example line 1 "1. V1 (25 Non-AARA desks)"
+        String handleAARAText = this.aara ? " AARA" : " Non-AARA";
+
+        bw.write(nthItem + ". " + id + " (" + totalDesks
+                + handleAARAText + " desks)"
+                + System.lineSeparator());
+
+        // example line 2 "Room Count: 1, Rooms: R1, Rows: 5, Columns: 5, Desks: 25, AARA: false"
+        StringBuilder roomNames = new StringBuilder();
+        boolean firstRoom = true;
+        for (Room r : rooms.all()) {
+            if (!firstRoom) {
+                roomNames.append(" ");
+            }
+            roomNames.append(r.roomId());
+            firstRoom = false;
+        }
+
+        bw.write("Room Count: " + roomCount
+                + ", Rooms: " + roomNames
+                + ", Rows: " + rows
+                + ", Columns: " + columns
+                + ", Desks: " + totalDesks
+                + ", AARA: " + aara
+                + System.lineSeparator());
     }
 
     /**
