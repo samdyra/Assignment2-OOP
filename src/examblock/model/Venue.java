@@ -95,6 +95,8 @@ public class Venue implements StreamManager, ManageableListItem {
                 + System.lineSeparator());
 
         // example line 2 "Room Count: 1, Rooms: R1, Rows: 5, Columns: 5, Desks: 25, AARA: false"
+
+        // build room names
         StringBuilder roomNames = new StringBuilder();
         boolean firstRoom = true;
         for (Room r : rooms.all()) {
@@ -132,6 +134,73 @@ public class Venue implements StreamManager, ManageableListItem {
     @Override
     public void streamIn(BufferedReader br, Registry registry, int nthItem)
             throws RuntimeException {
+        // line 1 example: "1. V1 (25 Non-AARA desks)"
+        String header = Utilities.getLine(br);
+        if (header == null) {
+            throw new RuntimeException("EOF reading Venue #" + nthItem);
+        }
+
+        String[] partsOfHeader = header.split("\\. ");
+        int index = Utilities.toInt(partsOfHeader[0], "Number format exception parsing Venue "
+                + nthItem + " header");
+        if (index != nthItem) {
+            throw new RuntimeException("Venue index out of sync!");
+        }
+
+        // get venue id, example: 4. V1+V2+V3 (80 Non-AARA desks)
+        // get the V1+V2+V3
+        String[] idParts = partsOfHeader[1].split(" ");
+        this.id = idParts[0];
+
+        // Line 2 example : "Room Count: 1, Rooms: S101, Rows: 5, Columns: 5, Desks: 25, AARA: false"
+        String roomDetails = Utilities.getLine(br);
+        if (roomDetails == null) {
+            throw new RuntimeException("EOF reading Venue #" + nthItem);
+        }
+
+        this.rooms = new RoomList(registry);
+
+        String[] details = roomDetails.split(",");
+        for (String detail : details) {
+            String[] pair = Utilities.keyValuePair(detail.trim());
+            if (pair == null) {
+                continue;
+            }
+
+            String roomDetailKey = pair[0];
+            String roomDetailValue = pair[1];
+
+            switch (roomDetailKey) {
+                case "Room Count":
+                    this.roomCount = Utilities.toInt(pair[1],
+                            "Number format exception parsing Venue " + nthItem + " Room Count");
+                    break;
+                case "Rooms":
+                    // rooms are space separated: "R1 R2 R3"
+                    String[] roomNames = roomDetailValue.split(" ");
+                    for (String roomName : roomNames) {
+                        Room room = registry.get(roomName.trim(), Room.class);
+                        rooms.add(room);
+                    }
+                    break;
+                case "Rows":
+                    this.rows = Utilities.toInt(roomDetailValue,
+                            "Number format exception parsing Venue " + nthItem + " Rows");
+                    break;
+                case "Columns":
+                    this.columns = Utilities.toInt(roomDetailValue,
+                            "Number format exception parsing Venue " + nthItem + " Columns");
+                    break;
+                case "Desks":
+                    this.totalDesks = Utilities.toInt(roomDetailValue,
+                            "Number format exception parsing Venue " + nthItem + " Desks");
+                    break;
+                case "AARA":
+                    this.aara = Utilities.toBoolean(roomDetailValue,
+                            "Boolean format exception parsing Venue " + nthItem + " AARA");
+                    break;
+            }
+        }
     }
 
     /**
@@ -141,7 +210,22 @@ public class Venue implements StreamManager, ManageableListItem {
      */
     @Override
     public String getFullDetail() {
-        return null;
+        StringBuilder roomNames = new StringBuilder();
+        boolean firstRoom = true;
+        for (Room r : rooms.all()) {
+            if (!firstRoom) {
+                roomNames.append(" ");
+            }
+            roomNames.append(r.roomId());
+            firstRoom = false;
+        }
+        return "Room Count: " + roomCount
+                + ", Rooms: " + roomNames
+                + ", Rows: " + rows
+                + ", Columns: " + columns
+                + ", Desks: " + totalDesks
+                + ", AARA: " + aara
+                + System.lineSeparator();
     }
 
     /**
@@ -153,7 +237,7 @@ public class Venue implements StreamManager, ManageableListItem {
      */
     @Override
     public Object[] toTableRow() {
-        return null;
+        return new Object[]{id, totalDesks, aara};
     }
 
     /**
@@ -163,7 +247,7 @@ public class Venue implements StreamManager, ManageableListItem {
      */
     @Override
     public String getId() {
-        return null;
+        return this.id;
     }
 
     /**
@@ -172,7 +256,7 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return The identifier of the venue.
      */
     public String venueId() {
-        return null;
+        return this.id;
     }
 
     /**
@@ -181,7 +265,7 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return a new list containing the rooms in this venue.
      */
     public List<Room> getRooms() {
-        return null;
+        return new ArrayList<>(this.rooms.all());
     }
 
     /**
@@ -190,7 +274,7 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return The number of rows of desks in this venue.
      */
     public int getRows() {
-        return 0;
+        return this.rows;
     }
 
     /**
@@ -199,7 +283,7 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return The number of columns of desks in this venue.
      */
     public int getColumns() {
-        return 0;
+        return this.columns;
     }
 
     /**
@@ -209,7 +293,7 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return The total number of desks in the venue.
      */
     public int deskCount() {
-        return 0;
+        return this.totalDesks;
     }
 
     /**
@@ -218,7 +302,7 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return True if this is an AARA venue.
      */
     public boolean isAara() {
-        return false;
+        return this.aara;
     }
 
     /**
@@ -230,7 +314,15 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return True if this venue is the same AARA type as the parameter.
      */
     public boolean checkVenueType(boolean aara) {
-        return false;
+        if (this.aara != aara) {
+            if (this.aara) {
+                System.out.println("This is an AARA venue.");
+            } else {
+                System.out.println("This is NOT an AARA venue.");
+            }
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -243,7 +335,13 @@ public class Venue implements StreamManager, ManageableListItem {
      * @return True if numberStudents will fit in this venue.
      */
     public boolean willFit(int numberStudents) {
-        return false;
+        if (numberStudents > totalDesks) {
+            System.out.println("This venue only has " + totalDesks
+                    + " desks, " + numberStudents
+                    + " students will not fit in this venue!");
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -254,7 +352,7 @@ public class Venue implements StreamManager, ManageableListItem {
      */
     @Override
     public String toString() {
-        return null;
+        return this.id;
     }
 
     /**
@@ -265,7 +363,19 @@ public class Venue implements StreamManager, ManageableListItem {
      */
     @Override
     public boolean equals(Object o) {
-        return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Venue other = (Venue) o;
+        return other.id.equals(this.id)
+                && other.roomCount == this.roomCount
+                && other.rows == this.rows
+                && other.columns == this.columns
+                && other.totalDesks == this.totalDesks
+                && other.aara == this.aara;
     }
 
     /**
@@ -275,6 +385,11 @@ public class Venue implements StreamManager, ManageableListItem {
      */
     @Override
     public int hashCode() {
-        return 0;
+        return this.id.hashCode()
+                + 2 * this.roomCount
+                + 3 * this.rows
+                + 5 * this.columns
+                + 7 * this.totalDesks
+                + 11 * Boolean.hashCode(this.aara);
     }
 }
