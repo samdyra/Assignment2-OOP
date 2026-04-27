@@ -16,6 +16,12 @@ import java.util.List;
  * existing schedule. Session numbers do not have to necessarily be sequential.
  */
 public class Session implements StreamManager, ManageableListItem {
+    private Venue venue;
+    private int sessionNumber;
+    private LocalDate day;
+    private LocalTime start;
+    private List<Exam> exams;
+    private Desk[][] desks;
 
     /**
      * Constructs a new empty Exam Session for a particular Venue. The calling
@@ -34,6 +40,27 @@ public class Session implements StreamManager, ManageableListItem {
      */
     public Session(Venue venue, int sessionNumber, LocalDate day,
                    LocalTime start, Registry registry) {
+        this.venue = venue;
+        this.sessionNumber = sessionNumber;
+        this.day = day;
+        this.start = start;
+
+        // size of the venue
+        int rows = this.venue.getRows();
+        int columns = this.venue.getColumns();
+
+        int deskNum = 1;
+
+        for (int i = 0; i <= rows; i++) {
+            for (int j = 0; j <= columns; j++) {
+                if (deskNum <= venue.deskCount()) {
+                    desks[i][j] = new Desk(deskNum);
+                }
+                deskNum++;
+            }
+        }
+
+        registry.add(this, Session.class);
     }
 
     /**
@@ -48,6 +75,8 @@ public class Session implements StreamManager, ManageableListItem {
      */
     public Session(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
+        this.streamIn(br, registry, nthItem);
+        registry.add(this, Session.class);
     }
 
     /**
