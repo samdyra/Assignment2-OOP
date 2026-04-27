@@ -140,6 +140,10 @@ public class Desk {
      * @throws IOException on any IO related issues
      */
     public void streamOut(BufferedWriter bw) throws IOException {
+        bw.write("Desk: " + deskNumber
+                + ", LUI: " + lui
+                + ", Name: " + familyName + ", " + givenAndInit
+                + System.lineSeparator());
     }
 
     /**

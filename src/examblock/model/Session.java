@@ -104,6 +104,39 @@ public class Session implements StreamManager, ManageableListItem {
      */
     @Override
     public void streamOut(BufferedWriter bw, int nthItem) throws IOException {
+        // venue header example:
+        // 1. Venue: V1+V2+V3, Session Number: 1, Day: 2025-03-10, Start: 12:30,
+        bw.write(nthItem + ". " + this.getFullDetail());
+
+        // loop through exam
+        for (Exam exam : exams) {
+            // write exam name
+            bw.write(exam.getShortTitle() + System.lineSeparator());
+
+            // count desks
+            int deskCount = 0;
+            for (int col = 0; col < this.venue.getColumns(); col++) {
+                for (int row = 0; row < this.venue.getRows(); row++) {
+                    Desk desk = desks[row][col];
+                    if (desk != null && desk.deskExam().equals(exam.abbrevShortTitle())) {
+                        deskCount++;
+                    }
+                }
+            }
+            // write desk count example: [Desks: 36]
+            bw.write("[Desks: " + deskCount + "]" + System.lineSeparator());
+
+            // Write each desk assigned to this exam
+            // example: Desk: 64, LUI: 9999440022, Name: Brown, Noah J.
+            for (int col = 0; col < this.venue.getColumns(); col++) {
+                for (int row = 0; row < this.venue.getRows(); row++) {
+                    Desk desk = this.desks[row][col];
+                    if (desk != null && desk.deskExam().equals(exam.abbrevShortTitle())) {
+                        desk.streamOut(bw);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -134,7 +167,14 @@ public class Session implements StreamManager, ManageableListItem {
      */
     @Override
     public String getFullDetail() {
-        return null;
+        // example: 1. Venue: V1+V2+V3, Session Number: 1, Day: 2025-03-10, Start: 12:30, Student Count: 53, Exams: 2
+        return "Venue: " + venue.venueId()
+                + ", Session Number: " + sessionNumber
+                + ", Day: " + day
+                + ", Start: " + start
+                + ", Student Count: " + countStudents()
+                + ", Exams: " + exams.size()
+                + System.lineSeparator();
     }
 
     /**
@@ -144,7 +184,7 @@ public class Session implements StreamManager, ManageableListItem {
      */
     @Override
     public String getId() {
-        return null;
+        return venue.venueId() + "-" + sessionNumber;
     }
 
     /**
@@ -153,7 +193,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @return The venue of this session.
      */
     public Venue getVenue() {
-        return null;
+        return this.venue;
     }
 
     /**
@@ -162,7 +202,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @return The sessionNumber of this session.
      */
     public int getSessionNumber() {
-        return 0;
+        return this.sessionNumber;
     }
 
     /**
@@ -171,7 +211,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @return The date of this session.
      */
     public LocalDate getDate() {
-        return null;
+        return this.day;
     }
 
     /**
@@ -180,7 +220,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @return The start time of this session.
      */
     public LocalTime getTime() {
-        return null;
+        return this.start;
     }
 
     /**
@@ -189,7 +229,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @return The list of exams being held in this session.
      */
     public List<Exam> getExams() {
-        return null;
+        return this.exams;
     }
 
     /**
@@ -212,7 +252,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @return the desk at the given position
      */
     public Desk getDesk(int row, int column) {
-        return null;
+        return desks[row][column];
     }
 
     /**
@@ -221,7 +261,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @return the total number of desks available here
      */
     public int getTotalDesks() {
-        return 0;
+        return venue.deskCount();
     }
 
     /**
@@ -230,6 +270,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @param exam the exam to be allocated to this venue.
      */
     public void scheduleExam(Exam exam) {
+        exams.add(exam);
     }
 
     /**
@@ -238,6 +279,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @param exam the exam to be deallocated from this venue.
      */
     public void removeExam(Exam exam) {
+        exams.remove(exam);
     }
 
     /**
@@ -255,6 +297,9 @@ public class Session implements StreamManager, ManageableListItem {
      * for each desk.
      */
     public void printDesks() {
+        StringBuilder sb = new StringBuilder();
+        printDesks(sb);
+        System.out.println(sb);
     }
 
     /**
@@ -264,6 +309,16 @@ public class Session implements StreamManager, ManageableListItem {
      * @param sb the StringBuilder to append to
      */
     public void printDesks(StringBuilder sb) {
+        sb.append("Venue ").append(venue.venueId()).append(System.lineSeparator());
+        for (int row = 0; row < venue.getRows(); row++) {
+            for (int col = 0; col < venue.getColumns(); col++) {
+                Desk desk = desks[row][col];
+                if (desk != null) {
+                    sb.append(String.format("%-20s", desk.toString()));
+                }
+            }
+            sb.append(System.lineSeparator());
+        }
     }
 
     /**
@@ -284,7 +339,17 @@ public class Session implements StreamManager, ManageableListItem {
      */
     @Override
     public boolean equals(Object o) {
-        return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Session other = (Session) o;
+        return other.venue.equals(this.venue)
+                && other.sessionNumber == this.sessionNumber
+                && other.day.equals(this.day)
+                && other.start.equals(this.start);
     }
 
     /**
@@ -294,6 +359,9 @@ public class Session implements StreamManager, ManageableListItem {
      */
     @Override
     public int hashCode() {
-        return 0;
+        return this.venue.hashCode()
+                + 2 * this.sessionNumber
+                + 3 * this.day.hashCode()
+                + 5 * this.start.hashCode();
     }
 }
