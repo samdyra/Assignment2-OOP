@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -24,6 +25,9 @@ public class Session implements StreamManager, ManageableListItem {
     private List<Exam> exams;
     private Desk[][] desks;
     private Registry registry;
+    private int rows;
+    private int columns;
+    private int totalDesks;
 
     /**
      * Constructs a new empty Exam Session for a particular Venue. The calling
@@ -47,21 +51,8 @@ public class Session implements StreamManager, ManageableListItem {
         this.day = day;
         this.start = start;
         this.registry = registry;
-
-        // size of the venue
-        int rows = this.venue.getRows();
-        int columns = this.venue.getColumns();
-
-        int deskNum = 1;
-
-        for (int i = 0; i <= rows; i++) {
-            for (int j = 0; j <= columns; j++) {
-                if (deskNum <= venue.deskCount()) {
-                    desks[i][j] = new Desk(deskNum);
-                }
-                deskNum++;
-            }
-        }
+        this.exams = new ArrayList<>();
+        initializeDesks();
 
         registry.add(this, Session.class);
     }
@@ -78,8 +69,8 @@ public class Session implements StreamManager, ManageableListItem {
      */
     public Session(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
-        this.streamIn(br, registry, nthItem);
         this.registry = registry;
+        streamIn(br, registry, nthItem);
         registry.add(this, Session.class);
     }
 
@@ -320,10 +311,39 @@ public class Session implements StreamManager, ManageableListItem {
      * @param cohort   all the Year 12 students.
      */
     public void allocateStudents(ExamList allExams, StudentList cohort) {
+        // avoid clashes
+        detectClashes(cohort);
+
+        // check if students will fit
+        int totalStudents = countStudents();
+        if (totalStudents > totalDesks) {
+            return;
+        }
+
+        // calculate spacing strategy
+        int gaps = totalDesks - totalStudents;
+        boolean skipColumns = totalStudents < (totalDesks / 2);
+        if (skipColumns) {
+            gaps = (totalDesks / 2) - totalStudents;
+        }
+
+        // calculate gaps between exam groups
+        int examCount = exams.size();
+        int interGaps = 0;
+        if (examCount > 1) {
+            interGaps = gaps / (examCount - 1);
+        }
+
+        // sort all students alphabetically
+        List<Student> allStudents = cohort.all();
+        sortStudentsAlphabetically(allStudents);
+
+        // allocate students per exam
+        int nextDesk = 1;
         for (Exam exam : exams) {
-            List<Student> matchingStudents = findMatchingStudents(exam, cohort);
-            sortStudentsAlphabetically(matchingStudents);
-            assignStudentsToDesks(matchingStudents, exam);
+            nextDesk = allocateExamStudents(exam, allStudents, nextDesk, skipColumns);
+            // add gap between exam groups
+            nextDesk += interGaps;
         }
     }
 
@@ -365,7 +385,10 @@ public class Session implements StreamManager, ManageableListItem {
      */
     @Override
     public String toString() {
-        return null;
+        return venue.venueId()
+                + ": " + sessionNumber
+                + ": " + day
+                + " " + start;
     }
 
     /**
@@ -403,69 +426,102 @@ public class Session implements StreamManager, ManageableListItem {
     }
 
     /**
-     * Find students whose AARA status matches the venue and who take
-     * the exam's subject.
+     * Detect students who are scheduled for multiple exams in this session
+     * and flag them as clashes.
      *
-     * @param exam   the exam to match against
-     * @param cohort all the Year 12 students
-     * @return list of matching students
+     * @param cohort all Year 12 students
      */
-    private List<Student> findMatchingStudents(Exam exam, StudentList cohort) {
-        List<Student> matchingStudents = new ArrayList<>();
-        Subject examSubject = exam.getSubject();
+    private void detectClashes(StudentList cohort) {
+        // Collect all exam subjects in this session
+        List<Subject> examSubjects = new ArrayList<>();
+        for (Exam exam : exams) {
+            examSubjects.add(exam.getSubject());
+        }
 
+        // Check each student for multiple matches
         for (Student student : cohort.all()) {
-            if (student.isAara() == venue.isAara()) {
+            if (student.isAara() != venue.isAara()) {
+                continue;
+            }
+            int matchCount = 0;
+            for (Subject examSubject : examSubjects) {
                 for (Subject studentSubject : student.getSubjects().all()) {
                     if (studentSubject.equals(examSubject)) {
-                        matchingStudents.add(student);
+                        matchCount++;
                         break;
                     }
                 }
             }
+            if (matchCount > 1) {
+                System.out.println("CLASH: " + student.fullName()
+                        + " is scheduled for " + matchCount
+                        + " exams in this session!");
+            }
         }
-        return matchingStudents;
     }
 
     /**
-     * Sort students alphabetically by family name then given name.
+     * Sort students alphabetically by family name, then given names.
      *
-     * @param students the list of students to sort
+     * @param students the list to sort
      */
     private void sortStudentsAlphabetically(List<Student> students) {
-        students.sort((studentA, studentB) -> {
-            int familyNameComparison = studentA.familyName()
-                    .compareToIgnoreCase(studentB.familyName());
-            if (familyNameComparison != 0) {
-                return familyNameComparison;
-            }
-            return studentA.givenNames()
-                    .compareToIgnoreCase(studentB.givenNames());
-        });
+        students.sort(Comparator.comparing(Student::familyName)
+                .thenComparing(Student::givenNames));
     }
 
     /**
-     * assign students to the available desks, filling column-by-column and front-to-back.
+     * Allocate students for a single exam to desks, starting from nextDesk.
+     * Only assigns students whose AARA status matches the venue and who
+     * take this exam's subject.
      *
-     * @param students the sorted list of students to assign
-     * @param exam     the exam being assigned
+     * @param exam         the exam to allocate students for
+     * @param allStudents  sorted list of all students
+     * @param nextDesk     the desk number to start from (1-based)
+     * @param skipColumns  true to skip every other column for spacing
+     * @return the next available desk number after allocation
      */
-    private void assignStudentsToDesks(List<Student> students, Exam exam) {
-        int studentIndex = 0;
-        for (int col = 0; col < venue.getColumns(); col++) {
-            for (int row = 0; row < venue.getRows(); row++) {
-                if (studentIndex >= students.size()) {
-                    return;
-                }
-                Desk desk = desks[row][col];
-                if (desk != null && desk.deskFamilyName().isEmpty()) {
-                    desk.setStudent(students.get(studentIndex));
-                    desk.setExam(exam);
-                    studentIndex++;
+    private int allocateExamStudents(Exam exam, List<Student> allStudents,
+                                     int nextDesk, boolean skipColumns) {
+        Subject subject = exam.getSubject();
+
+        for (Student student : allStudents) {
+            if (student.isAara() != venue.isAara()) {
+                continue;
+            }
+
+            // make sure student takes this subject
+            boolean takesSubject = false;
+            for (Subject studentSubject : student.getSubjects().all()) {
+                if (studentSubject.equals(subject)) {
+                    takesSubject = true;
+                    break;
                 }
             }
+
+            if (!takesSubject) {
+                continue;
+            }
+
+            // convert desk number to row/col
+            int col = (nextDesk - 1) / rows;
+            int row = (nextDesk - 1) % rows;
+
+            if (row < rows && col < columns && desks[row][col] != null) {
+                desks[row][col].setStudent(student);
+                desks[row][col].setExam(exam);
+            }
+
+            // skip to next column if spacing is on and at end of column
+            if (skipColumns && nextDesk % rows == 0) {
+                nextDesk += rows;
+            }
+            nextDesk++;
         }
+
+        return nextDesk;
     }
+
 
     /**
      * Parse the session header line and set venue, session number, day, start.
@@ -530,13 +586,15 @@ public class Session implements StreamManager, ManageableListItem {
      * create empty desk grid that match venue dimensions and assign desk numbers
      */
     private void initializeDesks() {
-        int rows = venue.getRows();
-        int columns = venue.getColumns();
+        this.rows = venue.getRows();
+        this.columns = venue.getColumns();
+        this.totalDesks = venue.deskCount();
         this.desks = new Desk[rows][columns];
+
         int deskNumber = 1;
         for (int col = 0; col < columns; col++) {
             for (int row = 0; row < rows; row++) {
-                if (deskNumber <= venue.deskCount()) {
+                if (deskNumber <= totalDesks) {
                     desks[row][col] = new Desk(deskNumber);
                 }
                 deskNumber++;
