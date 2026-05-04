@@ -155,5 +155,35 @@ public class Desk {
      * @throws IOException on any IO related issues
      */
     public void streamIn(BufferedReader br, String examName) throws IOException {
+        String line = Utilities.getLine(br);
+        if (line == null) {
+            return;
+        }
+
+        this.examName = examName;
+
+        String[] details = line.split(",");
+        for (String detail : details) {
+            String[] pair = Utilities.keyValuePair(detail.trim());
+            if (pair == null) {
+                continue;
+            }
+            switch (pair[0]) {
+                case "Desk":
+                    this.deskNumber = Utilities.toInt(pair[1],
+                            "Number format exception parsing Desk number");
+                    break;
+                case "LUI":
+                    this.lui = Utilities.toLong(pair[1],
+                            "Number format exception parsing Desk LUI");
+                    break;
+                case "Name":
+                    this.familyName = pair[1];
+                    break;
+                default:
+                    this.givenAndInit = detail.trim();
+                    break;
+            }
+        }
     }
 }

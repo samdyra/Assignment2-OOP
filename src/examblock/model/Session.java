@@ -244,7 +244,25 @@ public class Session implements StreamManager, ManageableListItem {
      * @return the total count of matching student-exam pairs
      */
     public int countStudents() {
-        return 0;
+        int count = 0;
+        // Get all students from registry
+        List<Student> allStudents = registry.getAll(Student.class);
+        for (Exam exam : exams) {
+            Subject examSubject = exam.getSubject();
+            for (Student student : allStudents) {
+                // match AARA Status
+                if (student.isAara() == venue.isAara()) {
+                    // check if the student take the subject
+                    for (Subject studentSubject : student.getSubjects().all()) {
+                        if (studentSubject.equals(examSubject)) {
+                            count++;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return count;
     }
 
     /**
