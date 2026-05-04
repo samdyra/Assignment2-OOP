@@ -162,6 +162,15 @@ public class Session implements StreamManager, ManageableListItem {
     @Override
     public void streamIn(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
+        this.registry = registry;
+        this.exams = new ArrayList<>();
+
+        int examCount = parseSessionHeader(br, nthItem);
+        initializeDesks();
+
+        for (int examIndex = 0; examIndex < examCount; examIndex++) {
+            readExamAndDesks(br, nthItem);
+        }
     }
 
     /**
@@ -458,4 +467,164 @@ public class Session implements StreamManager, ManageableListItem {
         }
     }
 
+    /**
+     * Parse the session header line and set venue, session number, day, start.
+     *
+     * @param br      reader to read from
+     * @param nthItem position in stream
+     *
+     * @return the number of exams in this session
+     */
+    private int parseSessionHeader(BufferedReader br, int nthItem) {
+        String header = Utilities.getLine(br);
+        if (header == null) {
+            throw new RuntimeException("EOF reading Session #" + nthItem);
+        }
+
+        String[] headerParts = header.split("\\. ");
+        int index = Utilities.toInt(headerParts[0],
+                "Number format exception parsing Session " + nthItem + " header");
+        if (index != nthItem) {
+            throw new RuntimeException("Session index out of sync!");
+        }
+
+        int examCount = 0;
+        String[] details = headerParts[1].split(",");
+        for (String detail : details) {
+            String[] pair = Utilities.keyValuePair(detail.trim());
+            if (pair == null) {
+                continue;
+            }
+            String detailKey = pair[0];
+            String detailValue = pair[1];
+
+            switch (detailKey) {
+                case "Venue":
+                    this.venue = registry.get(detailValue, Venue.class);
+                    break;
+                case "Session Number":
+                    this.sessionNumber = Utilities.toInt(detailValue,
+                            "Number format exception parsing Session "
+                                    + nthItem + " Session Number");
+                    break;
+                case "Day":
+                    this.day = Utilities.toLocalDate(detailValue,
+                            "Date format error parsing Session " + nthItem + " Day");
+                    break;
+                case "Start":
+                    this.start = Utilities.toLocalTime(detailValue,
+                            "Time format error parsing Session " + nthItem + " Start");
+                    break;
+                case "Exams":
+                    examCount = Utilities.toInt(detailValue,
+                            "Number format exception parsing Session "
+                                    + nthItem + " Exams");
+                    break;
+            }
+        }
+
+        return examCount;
+    }
+
+    /**
+     * create empty desk grid that match venue dimensions and assign desk numbers
+     */
+    private void initializeDesks() {
+        int rows = venue.getRows();
+        int columns = venue.getColumns();
+        this.desks = new Desk[rows][columns];
+        int deskNumber = 1;
+        for (int col = 0; col < columns; col++) {
+            for (int row = 0; row < rows; row++) {
+                if (deskNumber <= venue.deskCount()) {
+                    desks[row][col] = new Desk(deskNumber);
+                }
+                deskNumber++;
+            }
+        }
+    }
+
+    /**
+     * Read one exam title and its desk allocations from the stream.
+     *
+     * @param br      reader to read from
+     * @param nthItem position in stream for error messages
+     * @throws IOException      on read failure
+     */
+    private void readExamAndDesks(BufferedReader br, int nthItem) throws IOException {
+        // exam title example "Year 12 Internal Assessment Literature"
+        String examTitle = Utilities.getLine(br);
+        if (examTitle == null) {
+            throw new RuntimeException("EOF reading Session " + nthItem + " exam");
+        }
+
+        Exam exam = registry.get(examTitle, Exam.class);
+        exams.add(exam);
+
+        // "[Desks: 36]"
+        String desksHeader = Utilities.getLine(br);
+        if (desksHeader == null) {
+            throw new RuntimeException("EOF reading Session " + nthItem + " desks header");
+        }
+
+        String desksCountStr = desksHeader.substring(
+                desksHeader.indexOf(":") + 2,
+                desksHeader.indexOf("]"));
+        int desksCount = Utilities.toInt(desksCountStr,
+                "Number format exception parsing desk count");
+
+        // read all desk allocation
+        for (int deskIndex = 0; deskIndex < desksCount; deskIndex++) {
+            readDeskAllocation(br, exam, nthItem);
+        }
+    }
+
+    /**
+     * Read a single desk allocation line and place it in the grid.
+     *
+     * @param br      reader to read from
+     * @param exam    the exam for this desk
+     *
+     * @param nthItem position in stream for error messages
+     * @throws RuntimeException on format error
+     */
+    private void readDeskAllocation(BufferedReader br, Exam exam, int nthItem) throws RuntimeException {
+        String deskLine = Utilities.getLine(br);
+        if (deskLine == null) {
+            throw new RuntimeException("EOF reading desk in Session " + nthItem);
+        }
+
+        int readDeskNumber = 0;
+        long readLui = 0;
+        String readGivenAndInit = "";
+
+        String[] deskDetails = deskLine.split(",");
+        for (String detail : deskDetails) {
+            String[] pair = Utilities.keyValuePair(detail.trim());
+            if (pair == null) {
+                readGivenAndInit = detail.trim();
+                continue;
+            }
+            switch (pair[0]) {
+                case "Desk":
+                    readDeskNumber = Utilities.toInt(pair[1],
+                            "Number format exception parsing desk number");
+                    break;
+                case "LUI":
+                    readLui = Utilities.toLong(pair[1],
+                            "Number format exception parsing desk LUI");
+                    break;
+            }
+        }
+
+        // place into desk in the grid
+        int col = (readDeskNumber - 1) / venue.getRows();
+        int row = (readDeskNumber - 1) % venue.getRows();
+        if (desks[row][col] != null) {
+            Student student = registry.get(String.valueOf(readLui), Student.class);
+            desks[row][col].setStudent(student);
+            desks[row][col].setGivenAndInit(readGivenAndInit);
+            desks[row][col].setExam(exam);
+        }
+    }
 }
