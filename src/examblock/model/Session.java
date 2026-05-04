@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -306,11 +307,17 @@ public class Session implements StreamManager, ManageableListItem {
     /**
      * Allocates Students to Desks for every Exam in this Session.
      *
-     * @param exams  the current set of Year 12 Exams.
-     * @param cohort all the Year 12 students.
+     * @param allExams the current set of Year 12 Exams.
+     * @param cohort   all the Year 12 students.
      */
-    public void allocateStudents(ExamList exams, StudentList cohort) {
+    public void allocateStudents(ExamList allExams, StudentList cohort) {
+        for (Exam exam : exams) {
+            List<Student> matchingStudents = findMatchingStudents(exam, cohort);
+            sortStudentsAlphabetically(matchingStudents);
+            assignStudentsToDesks(matchingStudents, exam);
+        }
     }
+
 
     /**
      * Prints the layout of the desks in this session in the venue. Prints
@@ -385,4 +392,70 @@ public class Session implements StreamManager, ManageableListItem {
                 + 3 * this.day.hashCode()
                 + 5 * this.start.hashCode();
     }
+
+    /**
+     * Find students whose AARA status matches the venue and who take
+     * the exam's subject.
+     *
+     * @param exam   the exam to match against
+     * @param cohort all the Year 12 students
+     * @return list of matching students
+     */
+    private List<Student> findMatchingStudents(Exam exam, StudentList cohort) {
+        List<Student> matchingStudents = new ArrayList<>();
+        Subject examSubject = exam.getSubject();
+
+        for (Student student : cohort.all()) {
+            if (student.isAara() == venue.isAara()) {
+                for (Subject studentSubject : student.getSubjects().all()) {
+                    if (studentSubject.equals(examSubject)) {
+                        matchingStudents.add(student);
+                        break;
+                    }
+                }
+            }
+        }
+        return matchingStudents;
+    }
+
+    /**
+     * Sort students alphabetically by family name then given name.
+     *
+     * @param students the list of students to sort
+     */
+    private void sortStudentsAlphabetically(List<Student> students) {
+        students.sort((studentA, studentB) -> {
+            int familyNameComparison = studentA.familyName()
+                    .compareToIgnoreCase(studentB.familyName());
+            if (familyNameComparison != 0) {
+                return familyNameComparison;
+            }
+            return studentA.givenNames()
+                    .compareToIgnoreCase(studentB.givenNames());
+        });
+    }
+
+    /**
+     * assign students to the available desks, filling column-by-column and front-to-back.
+     *
+     * @param students the sorted list of students to assign
+     * @param exam     the exam being assigned
+     */
+    private void assignStudentsToDesks(List<Student> students, Exam exam) {
+        int studentIndex = 0;
+        for (int col = 0; col < venue.getColumns(); col++) {
+            for (int row = 0; row < venue.getRows(); row++) {
+                if (studentIndex >= students.size()) {
+                    return;
+                }
+                Desk desk = desks[row][col];
+                if (desk != null && desk.deskFamilyName().isEmpty()) {
+                    desk.setStudent(students.get(studentIndex));
+                    desk.setExam(exam);
+                    studentIndex++;
+                }
+            }
+        }
+    }
+
 }
