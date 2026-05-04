@@ -22,6 +22,7 @@ public class Session implements StreamManager, ManageableListItem {
     private LocalTime start;
     private List<Exam> exams;
     private Desk[][] desks;
+    private Registry registry;
 
     /**
      * Constructs a new empty Exam Session for a particular Venue. The calling
@@ -44,6 +45,7 @@ public class Session implements StreamManager, ManageableListItem {
         this.sessionNumber = sessionNumber;
         this.day = day;
         this.start = start;
+        this.registry = registry;
 
         // size of the venue
         int rows = this.venue.getRows();
@@ -76,6 +78,7 @@ public class Session implements StreamManager, ManageableListItem {
     public Session(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
         this.streamIn(br, registry, nthItem);
+        this.registry = registry;
         registry.add(this, Session.class);
     }
 

@@ -25,7 +25,7 @@ public class ExamBlockModel {
     private RoomList rooms;
     private VenueList venues;
     private SessionList sessions;
-    private List<ModelObserver> observers;
+    private final List<ModelObserver> observers;
 
     /**
      * Constructor
