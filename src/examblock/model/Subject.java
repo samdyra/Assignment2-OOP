@@ -86,9 +86,14 @@ public class Subject implements StreamManager, ManageableListItem {
                 result.append(" ");
             }
             String word = words[i];
-            // cap first letter, lower the rest
-            result.append(Character.toUpperCase(word.charAt(0)))
-                    .append(word.substring(1).toLowerCase());
+            // might be roman numerals, dont lower
+            if (word.matches("^[IVXLCDM]+$")) {
+                result.append(word);
+            } else {
+                // cap first letter, lower the rest
+                result.append(Character.toUpperCase(word.charAt(0)))
+                        .append(word.substring(1).toLowerCase());
+            }
         }
         return result.toString();
     }
