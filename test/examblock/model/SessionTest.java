@@ -361,4 +361,127 @@ public class SessionTest {
                 otherRegistry);
         assertNotEquals(session.hashCode(), otherSession.hashCode());
     }
+
+    // complex stuffs regarding desk allocation algo
+
+    // allocateStudents tests
+
+    @Test
+    public void testAllocateStudentsBasic() {
+        Student student1 = new Student(9999111111L, "Dwiputra Sam", "Mulia",
+                1, 1, 2007, "Blue", false, registry);
+        student1.addSubject(subject1);
+
+        Student student2 = new Student(9999222222L, "Adam", "Brown",
+                2, 2, 2007, "Red", false, registry);
+        student2.addSubject(subject1);
+
+        session.scheduleExam(exam1);
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        studentList.add(student1);
+        studentList.add(student2);
+
+        session.allocateStudents(examList, studentList);
+
+        // b comes before M alphabetically
+        // first desk should be brown not sam
+        assertEquals("Brown", session.getDesk(0, 0).deskFamilyName());
+    }
+
+    @Test
+    public void testAllocateStudentsAlphabeticalOrder() {
+        Student studentA = new Student(9999111111L, "Sam", "Asam",
+                1, 1, 2007, "Blue", false, registry);
+        studentA.addSubject(subject1);
+
+        Student studentB = new Student(9999222222L, "Sam", "Clark",
+                2, 2, 2007, "Red", false, registry);
+        studentB.addSubject(subject1);
+
+        Student studentC = new Student(9999333333L, "Sam", "Beni",
+                3, 3, 2007, "Green", false, registry);
+        studentC.addSubject(subject1);
+
+        session.scheduleExam(exam1);
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        studentList.add(studentA);
+        studentList.add(studentB);
+        studentList.add(studentC);
+
+        session.allocateStudents(examList, studentList);
+
+        // Alphabetical: Asam, Beni, Clark
+        assertEquals("Asam", session.getDesk(0, 0).deskFamilyName());
+        assertEquals("Beni", session.getDesk(1, 0).deskFamilyName());
+        assertEquals("Clark", session.getDesk(2, 0).deskFamilyName());
+    }
+
+    @Test
+    public void testAllocateStudentsAaraNotIncluded() {
+        // aara student not be placed in non-AARA venue
+        Student aaraStudent = new Student(9999444444L, "Dwiputra", "Sam",
+                1, 1, 2007, "Blue", true, registry);
+        aaraStudent.addSubject(subject1);
+
+        session.scheduleExam(exam1);
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        studentList.add(aaraStudent);
+
+        session.allocateStudents(examList, studentList);
+
+        // should be empty
+        assertTrue(session.getDesk(0, 0).deskFamilyName().isEmpty());
+    }
+
+    @Test
+    public void testAllocateStudentsWrongSubjectNotIncluded() {
+        // Student taking a different subject should not be placed
+        Student wrongSubject = new Student(9999555555L, "Dwiputra", "Sam",
+                1, 1, 2007, "Blue", false, registry);
+        wrongSubject.addSubject(subject2); // literature
+
+        session.scheduleExam(exam1); // english exam
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        studentList.add(wrongSubject);
+
+        session.allocateStudents(examList, studentList);
+
+        assertTrue(session.getDesk(0, 0).deskFamilyName().isEmpty());
+    }
+
+    @Test
+    public void testAllocateStudentsColumnByColumn() {
+        // 5 rows and desk 6 should be on row col 0,1
+        // mock student
+        for (int i = 0; i < 6; i++) {
+            Student student = new Student(9999100000L + i,
+                    "Student" + (char) ('A' + i), "Name" + (char) ('A' + i),
+                    1, 1, 2007, "Blue", false, registry);
+            student.addSubject(subject1);
+        }
+
+        session.scheduleExam(exam1);
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        for (Student student : registry.getAll(Student.class)) {
+            studentList.add(student);
+        }
+
+        session.allocateStudents(examList, studentList);
+
+        // 5 row in the first col
+        assertFalse(session.getDesk(0, 0).deskFamilyName().isEmpty());
+        assertFalse(session.getDesk(4, 0).deskFamilyName().isEmpty());
+        // next should be in second col
+        assertFalse(session.getDesk(0, 1).deskFamilyName().isEmpty());
+    }
 }
