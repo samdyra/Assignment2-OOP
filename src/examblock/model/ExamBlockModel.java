@@ -8,6 +8,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import examblock.view.components.FileChooser;
 
 /**
  * The M in the MVC model - this is the source of truth for all the
@@ -220,10 +221,12 @@ public class ExamBlockModel {
                               String title, double version) {
         // If no filename, ask user for one
         if (filename == null) {
-            filename = FileChooser.getSaveFilename();
-            if (filename == null) {
+            FileChooser chooser = new FileChooser(title, version);
+            String selectedFilename = chooser.save(this.filename, Utilities.FileType.EBD);
+            if (selectedFilename == null || selectedFilename.isEmpty()) {
                 return false;
             }
+            filename = selectedFilename;
         }
 
         try {
@@ -266,9 +269,10 @@ public class ExamBlockModel {
      * a file to load.
      */
     public void loadFromFile() {
-        String selectedFilename = FileChooser.getOpenFilename();
-        if (selectedFilename != null) {
-            loadFromFile(new Registry(), selectedFilename);
+        FileChooser chooser = new FileChooser();
+        java.io.File selectedFile = chooser.open(filename, Utilities.FileType.EBD);
+        if (selectedFile != null) {
+            loadFromFile(new Registry(), selectedFile.getAbsolutePath());
         }
     }
 
