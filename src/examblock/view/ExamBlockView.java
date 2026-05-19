@@ -366,8 +366,7 @@ public class ExamBlockView implements ModelObserver {
      */
     public void updateStudentPage(StudentList students) {
         DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"LUI", "Full Name", "AARA", "Date of Birth",
-                        "Subjects"}, 0);
+                new String[]{"LUI", "Full Name", "AARA", "Date of Birth", "Subjects"}, 0);
         for (Student student : students.all()) {
             tableModel.addRow(student.toTableRow());
         }

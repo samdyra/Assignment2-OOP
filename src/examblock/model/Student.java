@@ -305,7 +305,23 @@ public class Student implements StreamManager, ManageableListItem {
      */
     @Override
     public Object[] toTableRow() {
-        return new Object[]{familyName, givenNames, lui, house, aara};
+        StringBuilder subjectString = new StringBuilder();
+        boolean firstSubject = true;
+        for (Subject s : subjects.all()) {
+            if (!firstSubject) {
+                subjectString.append(", ");
+            }
+            subjectString.append(s.getTitle());
+            firstSubject = false;
+        }
+
+        return new Object[]{
+                lui,
+                familyName.toUpperCase() + ", " + givenNames,
+                aara ? "AARA" : "",
+                dob,
+                subjectString.toString()
+        };
     }
 
     /**

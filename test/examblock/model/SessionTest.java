@@ -23,7 +23,7 @@ public class SessionTest {
     private Subject subject2;
     private Exam exam1;
     private Exam exam2;
-
+    
     @Before
     public void setUp() {
         registry = new Registry();
@@ -624,7 +624,7 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // Find their columns
+        // find student cols
         int col1 = -1;
         int col2 = -1;
         for (int col = 0; col < venue.getColumns(); col++) {

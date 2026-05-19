@@ -151,7 +151,7 @@ public class Unit implements StreamManager, ManageableListItem {
      */
     @Override
     public Object[] toTableRow() {
-        return new Object[]{subject.getTitle(), unitId, title};
+        return new Object[]{subject.getTitle(), unitId, title, description};
     }
 
     /**
