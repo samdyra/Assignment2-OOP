@@ -9,13 +9,28 @@ import java.time.LocalDate;
  * An object describing a single Year 12 Student.
  */
 public class Student implements StreamManager, ManageableListItem {
+    /** the student's 10-digit learner unique identifier. */
     private Long lui;
+
+    /** the given name(s) of this student. */
     private String givenNames;
+
+    /** the family name of this student. */
     private String familyName;
+
+    /** the date of birth of this student. */
     private LocalDate dob;
+
+    /** whether this student requires AARA adjustments. */
     private Boolean aara;
+
+    /** the house colour of this student. */
     private String house;
+
+    /** the list of subjects this student is enrolled in. */
     private SubjectList subjects;
+
+    /** the list of exams this student is scheduled for. */
     private ExamList exams;
 
     /**
@@ -132,10 +147,8 @@ public class Student implements StreamManager, ManageableListItem {
 
     /**
      * Used to write data to the disk.
-     *
      * The format of the text written to the stream must be matched exactly by
      * streamIn, so it is very important to format the output as described.
-     *
      * 1. LIAM ALEXANDER SMITH
      * LUI: 9999365663, Family Name: Smith, Given Name(s): Liam Alexander,
      * Date of Birth: 2007-12-08, House: Blue, AARA: false
@@ -178,7 +191,6 @@ public class Student implements StreamManager, ManageableListItem {
      * be allowed to propagate out to the calling method, which co-ordinates the
      * streaming. Any other exceptions should be converted to RuntimeExceptions
      * and rethrown.
-     *
      * For the format of the text in the input stream, refer to the
      * {@code streamOut} documentation.
      *
@@ -315,12 +327,8 @@ public class Student implements StreamManager, ManageableListItem {
             firstSubject = false;
         }
 
-        return new Object[]{
-                lui,
-                familyName.toUpperCase() + ", " + givenNames,
-                aara ? "AARA" : "",
-                dob,
-                subjectString.toString()
+        return new Object[]{lui, familyName.toUpperCase() + ", "
+                + givenNames, aara ? "AARA" : "", dob, subjectString.toString()
         };
     }
 

@@ -8,10 +8,19 @@ import java.io.IOException;
  * Represents an individual desk in an exam venue.
  */
 public class Desk {
+    /** the desk number in the venue. */
     private int deskNumber;
+
+    /** the family name of the assigned student. */
     private String familyName;
+
+    /** the given name and middle initial of the assigned student. */
     private String givenAndInit;
+
+    /** the LUI of the assigned student. */
     private long lui;
+
+    /** the name of the exam assigned to this desk. */
     private String examName;
 
     /**
@@ -27,6 +36,7 @@ public class Desk {
         this.lui = 0;
         this.examName = "";
     }
+
     /**
      * Gets the number of this desk.
      *
