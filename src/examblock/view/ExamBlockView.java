@@ -237,7 +237,8 @@ public class ExamBlockView implements ModelObserver {
 
         clearButton.setEnabled(examSelected);
         addButton.setEnabled(examSelected && venueSelected);
-        finaliseButton.setEnabled(hasUnfinalisedSessions());
+        // Enable finalise when there's at least 1 session
+        finaliseButton.setEnabled(model != null && model.getSessions().size() > 0);
     }
 
     // ==================== Update methods ====================
@@ -376,9 +377,12 @@ public class ExamBlockView implements ModelObserver {
             tableModel.addRow(new Object[]{subject.getTitle(),
                     subject.getDescription()});
         }
-        tabbedPane.setComponentAt(0,
-                new JScrollPane(new JTable(tableModel)));
+        JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        autoSizeColumns(table);
+        tabbedPane.setComponentAt(0, new JScrollPane(table));
     }
+
 
     /**
      * new data for this page of the tabbed view
@@ -391,8 +395,10 @@ public class ExamBlockView implements ModelObserver {
         for (Exam exam : exams.all()) {
             tableModel.addRow(exam.toLongTableRow());
         }
-        tabbedPane.setComponentAt(1,
-                new JScrollPane(new JTable(tableModel)));
+        JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        autoSizeColumns(table);
+        tabbedPane.setComponentAt(1, new JScrollPane(table));
     }
 
     /**
@@ -406,8 +412,10 @@ public class ExamBlockView implements ModelObserver {
         for (Unit unit : units.all()) {
             tableModel.addRow(unit.toTableRow());
         }
-        tabbedPane.setComponentAt(2,
-                new JScrollPane(new JTable(tableModel)));
+        JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        autoSizeColumns(table);
+        tabbedPane.setComponentAt(2, new JScrollPane(table));
     }
 
     /**
@@ -421,8 +429,10 @@ public class ExamBlockView implements ModelObserver {
         for (Student student : students.all()) {
             tableModel.addRow(student.toTableRow());
         }
-        tabbedPane.setComponentAt(3,
-                new JScrollPane(new JTable(tableModel)));
+        JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        autoSizeColumns(table);
+        tabbedPane.setComponentAt(3, new JScrollPane(table));
     }
 
     /**
@@ -436,9 +446,12 @@ public class ExamBlockView implements ModelObserver {
         for (Room room : rooms.all()) {
             tableModel.addRow(room.toTableRow());
         }
-        tabbedPane.setComponentAt(4,
-                new JScrollPane(new JTable(tableModel)));
+        JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        autoSizeColumns(table);
+        tabbedPane.setComponentAt(4, new JScrollPane(table));
     }
+
 
     /**
      * new data for this page of the tabbed view
@@ -447,12 +460,30 @@ public class ExamBlockView implements ModelObserver {
      */
     public void updateVenuPage(VenueList venues) {
         DefaultTableModel tableModel = new DefaultTableModel(
-                new String[]{"Venue ID", "Desks", "AARA"}, 0);
+                new String[]{"Venue", "Rooms", "Rows", "Columns", "Desks", "AARA"}, 0);
         for (Venue venue : venues.all()) {
-            tableModel.addRow(venue.toTableRow());
+            StringBuilder roomNames = new StringBuilder();
+            boolean firstRoom = true;
+            for (Room room : venue.getRooms()) {
+                if (!firstRoom) {
+                    roomNames.append(" ");
+                }
+                roomNames.append(room.roomId());
+                firstRoom = false;
+            }
+            tableModel.addRow(new Object[]{
+                    venue.venueId(),
+                    roomNames.toString(),
+                    venue.getRows(),
+                    venue.getColumns(),
+                    venue.deskCount(),
+                    venue.isAara() ? "✔" : ""
+            });
         }
-        tabbedPane.setComponentAt(5,
-                new JScrollPane(new JTable(tableModel)));
+        JTable table = new JTable(tableModel);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        autoSizeColumns(table);
+        tabbedPane.setComponentAt(5, new JScrollPane(table));
     }
 
     /**
@@ -776,5 +807,30 @@ public class ExamBlockView implements ModelObserver {
     public Venue getVenueFromVenueNodeMap(
             DefaultMutableTreeNode venueNode) {
         return venueNodeMap.get(venueNode);
+    }
+
+    /**
+     * Auto-size table columns to fit their content.
+     *
+     * @param table the table to resize
+     */
+    private void autoSizeColumns(JTable table) {
+        for (int col = 0; col < table.getColumnCount(); col++) {
+            int maxWidth = 0;
+            // Check header width
+            String headerValue = table.getColumnName(col);
+            maxWidth = table.getFontMetrics(table.getFont())
+                    .stringWidth(headerValue) + 20;
+            // Check data width
+            for (int row = 0; row < table.getRowCount(); row++) {
+                Object value = table.getValueAt(row, col);
+                if (value != null) {
+                    int width = table.getFontMetrics(table.getFont())
+                            .stringWidth(value.toString()) + 20;
+                    maxWidth = Math.max(maxWidth, width);
+                }
+            }
+            table.getColumnModel().getColumn(col).setPreferredWidth(maxWidth);
+        }
     }
 }
