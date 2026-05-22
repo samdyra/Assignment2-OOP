@@ -82,6 +82,10 @@ public class StudentTest {
 
     @Test
     public void testBufferedReaderConstructor() throws IOException {
+        Registry registry = new Registry();
+        new Subject("Essential English", "English course.", registry);
+        new Subject("Essential Mathematics", "Maths course.", registry);
+
         String input = "1. LIAM ALEXANDER SMITH\n"
                 + "LUI: 9999365663, Family Name: Smith, Given Name(s): Liam Alexander, "
                 + "Date of Birth: 2007-12-08, House: Blue, AARA: false\n"
@@ -99,6 +103,10 @@ public class StudentTest {
 
     @Test
     public void testBufferedReaderConstructorWithDirtyInput() throws IOException {
+        Registry registry = new Registry();
+        new Subject("Essential English", "English course.", registry);
+        new Subject("Essential Mathematics", "Maths course.", registry);
+
         String input = "1. JOHN MICHAEL HALL\n"
                 + "LUI: 9999572152, Family Name: Hall, Given Name(s): John   Michael, "
                 + "Date of Birth: 2008-05-25, House: Red, AARA: false\n"

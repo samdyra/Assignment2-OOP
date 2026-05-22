@@ -40,7 +40,8 @@ public class UnitTest {
 
     @Test
     public void testConstructor() {
-        assertEquals("Managing resources", unit.getDescription());
+        assertEquals("Manage the resources of a sole trader business.",
+                unit.getDescription());
         assertEquals(subject, unit.getSubject());
         assertEquals(Character.valueOf('3'), unit.id());
     }
