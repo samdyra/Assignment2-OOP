@@ -74,10 +74,9 @@ public class ExamBlockController {
         menuBar.add(viewMenu);
         view.getFrame().setJMenuBar(menuBar);
 
-        // Display the view
         view.display();
 
-        // Prompt to load a file on startup
+        // prompt to load a file on startup
         model.loadFromFile();
     }
 
@@ -98,7 +97,6 @@ public class ExamBlockController {
         boolean scheduled = SessionHandler.scheduleExam(model, exam, venue, aara);
 
         if (scheduled) {
-            // Refresh the tree to show the new session
             view.updateTree(model.getSessions(), model.getVenues());
             view.updateExamTable(model.getExams());
         }
