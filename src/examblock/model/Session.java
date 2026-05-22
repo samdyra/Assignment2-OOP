@@ -349,7 +349,7 @@ public class Session implements StreamManager, ManageableListItem {
             }
             allocateExamStudents(exams.getFirst(), allStudents, 1, colGap);
         } else {
-            // multiple exams -> inter-exam gaps take priority (note see example in bb)
+            // multiple exams -> inter-exam gaps take priority (note: see example in bb)
             // "Gaps between exams take priority over gaps between student columns."
             int totalStudentCols = 0;
             for (Exam exam : exams) {
@@ -361,12 +361,25 @@ public class Session implements StreamManager, ManageableListItem {
             int interRemainder = emptyCols % (exams.size() - 1);
 
             int nextCol = 0;
+            int lastExamIndex = exams.size() - 1;
             for (int i = 0; i < exams.size(); i++) {
-                int startDesk = nextCol * rows + 1;
-                int count = countExamStudents(exams.get(i), allStudents);
-                int examCols = (count + rows - 1) / rows;
-                allocateExamStudents(exams.get(i), allStudents, startDesk, 0);
-                nextCol += examCols + interGap + (i < interRemainder ? 1 : 0);
+                if (i == lastExamIndex) {
+                    // last exam: right-aligned so last student hits last desk
+                    int lastExamStudents = countExamStudents(
+                            exams.get(i), allStudents);
+                    int lastStartDesk = totalDesks - lastExamStudents + 1;
+                    allocateExamStudents(exams.get(i), allStudents,
+                            lastStartDesk, 0);
+                } else {
+                    // other exams: left-to-right from calculated position
+                    int startDesk = nextCol * rows + 1;
+                    int count = countExamStudents(exams.get(i), allStudents);
+                    int examCols = (count + rows - 1) / rows;
+                    allocateExamStudents(exams.get(i), allStudents,
+                            startDesk, 0);
+                    nextCol += examCols + interGap
+                            + (i < interRemainder ? 1 : 0);
+                }
             }
         }
     }

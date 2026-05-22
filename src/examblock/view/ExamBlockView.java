@@ -151,7 +151,7 @@ public class ExamBlockView implements ModelObserver {
         JScrollPane examScroll = new JScrollPane(examTable);
         examPanel.add(examScroll, BorderLayout.CENTER);
 
-        // ,iddle: session tree with label
+        // middle: session tree with label
         JPanel sessionPanel = new JPanel(new BorderLayout());
         JLabel sessionLabel = new JLabel("2. Select a Session / Venue",
                 SwingConstants.CENTER);
@@ -174,7 +174,7 @@ public class ExamBlockView implements ModelObserver {
         buttonPanel.add(goLabel);
         buttonPanel.add(Box.createVerticalStrut(20));
 
-        finaliseButton = new JButton("Finali...");
+        finaliseButton = new JButton("Finalize");
         finaliseButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         finaliseButton.setEnabled(false);
         buttonPanel.add(finaliseButton);
