@@ -94,6 +94,9 @@ public class ExamBlockView implements ModelObserver {
     /** Mapping from tree exam node to Exam object. */
     private Map<DefaultMutableTreeNode, Exam> examNodeMap;
 
+    /** Whether changes have been made since last finalise. */
+    private boolean dirty;
+
     /**
      * Constructor
      *
@@ -105,6 +108,7 @@ public class ExamBlockView implements ModelObserver {
         this.sessionNodeMap = new HashMap<>();
         this.venueNodeMap = new HashMap<>();
         this.examNodeMap = new HashMap<>();
+        this.dirty = false;
 
         frame = new JFrame("Exam Block Manager");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -237,8 +241,7 @@ public class ExamBlockView implements ModelObserver {
 
         clearButton.setEnabled(examSelected);
         addButton.setEnabled(examSelected && venueSelected);
-        // Enable finalise when there's at least 1 session
-        finaliseButton.setEnabled(model != null && model.getSessions().size() > 0);
+        finaliseButton.setEnabled(dirty);
     }
 
     // ==================== Update methods ====================
@@ -498,6 +501,7 @@ public class ExamBlockView implements ModelObserver {
         }
         switch (property) {
             case "loaded":
+                dirty = false;
                 frame.setTitle("Exam Block Manager - "
                         + model.getTitle()
                         + " (v" + model.getVersion() + ")");
@@ -510,17 +514,19 @@ public class ExamBlockView implements ModelObserver {
                 updateVenuPage(model.getVenues());
                 updateTree(model.getSessions(), model.getVenues());
                 break;
-            case "title":
-                frame.setTitle("Exam Block Manager - "
-                        + model.getTitle()
-                        + " (v" + model.getVersion() + ")");
+            case "scheduled":
+                dirty = true;
+                updateTree(model.getSessions(), model.getVenues());
+                updateExamTable(model.getExams());
                 break;
             case "finalised":
+                dirty = false;
                 updateTree(model.getSessions(), model.getVenues());
                 break;
             default:
                 break;
         }
+        updateButtonStates();
     }
 
     /**
