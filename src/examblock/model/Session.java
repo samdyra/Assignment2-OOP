@@ -367,13 +367,31 @@ public class Session implements StreamManager, ManageableListItem {
      */
     public void printDesks(StringBuilder sb) {
         sb.append("Venue ").append(venue.venueId()).append(System.lineSeparator());
-        for (int row = 0; row < venue.getRows(); row++) {
-            for (int col = 0; col < venue.getColumns(); col++) {
+
+        int colWidth = 20;
+
+        for (int row = 0; row < rows; row++) {
+            StringBuilder deskLine = new StringBuilder();
+            StringBuilder nameLine = new StringBuilder();
+            StringBuilder givenLine = new StringBuilder();
+
+            for (int col = 0; col < columns; col++) {
                 Desk desk = desks[row][col];
                 if (desk != null) {
-                    sb.append(String.format("%-20s", desk.toString()));
+                    deskLine.append(String.format("%-" + colWidth + "s",
+                            "Desk " + desk.deskNumber() + ":"));
+                    nameLine.append(String.format("%-" + colWidth + "s",
+                            desk.deskFamilyName() != null
+                                    ? desk.deskFamilyName() : ""));
+                    givenLine.append(String.format("%-" + colWidth + "s",
+                            desk.deskGivenAndInit() != null
+                                    ? desk.deskGivenAndInit() : ""));
                 }
             }
+
+            sb.append(deskLine.toString().stripTrailing()).append(System.lineSeparator());
+            sb.append(nameLine.toString().stripTrailing()).append(System.lineSeparator());
+            sb.append(givenLine.toString().stripTrailing()).append(System.lineSeparator());
             sb.append(System.lineSeparator());
         }
     }
@@ -466,8 +484,7 @@ public class Session implements StreamManager, ManageableListItem {
      * @param students the list to sort
      */
     private void sortStudentsAlphabetically(List<Student> students) {
-        students.sort(Comparator.comparing(Student::familyName)
-                .thenComparing(Student::givenNames));
+        students.sort(Comparator.comparing(Student::familyName));
     }
 
     /**

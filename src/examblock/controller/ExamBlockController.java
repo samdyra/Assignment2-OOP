@@ -62,12 +62,24 @@ public class ExamBlockController {
         // View menu
         JMenu viewMenu = new JMenu("View");
         JMenuItem deskItem = new JMenuItem("Desk Allocations...");
-        deskItem.addActionListener(e ->
-                model.getVenues().printAllocations(model.getSessions()));
+        deskItem.addActionListener(e -> {
+            StringBuilder sb = new StringBuilder();
+            model.getVenues().writeAllocations(sb, model.getSessions());
+            DialogUtils.showTextViewer(sb.toString(),
+                    "Desk Allocations",
+                    DialogUtils.ViewerOptions.SCROLL,
+                    Utilities.FileType.TXT);
+        });
         viewMenu.add(deskItem);
         JMenuItem finaliseItem = new JMenuItem("Finalise Reports...");
-        finaliseItem.addActionListener(e ->
-                SessionHandler.printEverything(model));
+        finaliseItem.addActionListener(e -> {
+            StringBuilder sb = new StringBuilder();
+            model.getVenues().writeAllocations(sb, model.getSessions());
+            DialogUtils.showTextViewer(sb.toString(),
+                    "Finalise Reports",
+                    DialogUtils.ViewerOptions.SCROLL,
+                    Utilities.FileType.TXT);
+        });
         viewMenu.add(finaliseItem);
 
         menuBar.add(fileMenu);

@@ -94,11 +94,21 @@ public class VenueList extends ListManager<Venue> {
         for (Venue venue : all()) {
             List<Session> venueSessions = sessions.forVenue(venue);
             for (Session session : venueSessions) {
-                sb.append("Venue ").append(venue.venueId())
-                        .append(" Session ").append(session.getSessionNumber())
+                sb.append("=".repeat(50))
                         .append(System.lineSeparator());
-                session.printDesks(sb);
+                sb.append(venue.venueId()).append(" (")
+                        .append(venue.deskCount())
+                        .append(venue.isAara() ? " AARA" : " Non-AARA")
+                        .append(" desks)")
+                        .append(System.lineSeparator());
+                sb.append("Venue: ").append(venue.venueId())
+                        .append(", Session Number: ")
+                        .append(session.getSessionNumber())
+                        .append(", Day: ").append(session.getDate())
+                        .append(", Start: ").append(session.getTime())
+                        .append(System.lineSeparator());
                 sb.append(System.lineSeparator());
+                session.printDesks(sb);
             }
         }
     }
