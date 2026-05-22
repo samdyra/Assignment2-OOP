@@ -10,12 +10,25 @@ import java.util.List;
  * Represents an exam venue, consisting of one or more Rooms.
  */
 public class Venue implements StreamManager, ManageableListItem {
+    /** the string identifier for this venue. */
     private String id;
+
+    /** the number of rooms used in this venue. */
     private int roomCount;
+
+    /** the list of rooms that make up this venue. */
     private RoomList rooms;
+
+    /** the number of rows of desks, front to back. */
     private int rows;
+
+    /** the number of columns of desks, left to right. */
     private int columns;
+
+    /** the total number of available desks. */
     private int totalDesks;
+
+    /** whether this venue is used for AARA exam sessions. */
     private boolean aara;
 
 
@@ -61,7 +74,7 @@ public class Venue implements StreamManager, ManageableListItem {
      *                 Subject names
      * @param nthItem  the index number of this serialized object
      * @throws IOException      on any read failure
-     * @throws RuntimeException
+     * @throws RuntimeException runtime exception
      */
     public Venue(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
@@ -71,10 +84,8 @@ public class Venue implements StreamManager, ManageableListItem {
 
     /**
      * Used to write data to the disk.
-     *
      * The format of the text written to the stream must be matched exactly by
      * streamIn, so it is very important to format the output as described.
-     *
      * 7. W1+W2 (15 desks)
      * Room Count: 2, Rooms: S101 S102, Rows: 3, Columns: 5, Desks: 15,
      * AARA: true
@@ -88,10 +99,10 @@ public class Venue implements StreamManager, ManageableListItem {
     @Override
     public void streamOut(BufferedWriter bw, int nthItem) throws IOException {
         // example line 1 "1. V1 (25 Non-AARA desks)"
-        String handleAARAText = this.aara ? " AARA" : " Non-AARA";
+        String handleAaraText = this.aara ? " AARA" : " Non-AARA";
 
         bw.write(nthItem + ". " + id + " (" + totalDesks
-                + handleAARAText + " desks)"
+                + handleAaraText + " desks)"
                 + System.lineSeparator());
 
         // example line 2 "Room Count: 1, Rooms: R1, Rows: 5, Columns: 5, Desks: 25, AARA: false"
@@ -121,7 +132,6 @@ public class Venue implements StreamManager, ManageableListItem {
      * be allowed to propagate out to the calling method, which co-ordinates the
      * streaming. Any other exceptions should be converted to RuntimeExceptions
      * and rethrown.
-     *
      * For the format of the text in the input stream, refer to the
      * {@code streamOut} documentation.
      *
@@ -152,7 +162,8 @@ public class Venue implements StreamManager, ManageableListItem {
         String[] idParts = partsOfHeader[1].split(" ");
         this.id = idParts[0];
 
-        // Line 2 example : "Room Count: 1, Rooms: S101, Rows: 5, Columns: 5, Desks: 25, AARA: false"
+        // Line 2 example : "Room Count: 1, Rooms: S101, Rows: 5,
+        // Columns: 5, Desks: 25, AARA: false"
         String roomDetails = Utilities.getLine(br);
         if (roomDetails == null) {
             throw new RuntimeException("EOF reading Venue #" + nthItem);

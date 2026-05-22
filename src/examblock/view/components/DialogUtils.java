@@ -78,7 +78,7 @@ public class DialogUtils {
         textArea.setLineWrap(wrapText);
         textArea.setWrapStyleWord(wrapText);
 
-        JScrollPane scrollPane = new JScrollPane(textArea);
+        final JScrollPane scrollPane = new JScrollPane(textArea);
 
         // wrap toggle
         JMenuBar menuBar = new JMenuBar();

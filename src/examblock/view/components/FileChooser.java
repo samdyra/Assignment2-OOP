@@ -12,11 +12,22 @@ import java.io.File;
  * newVersion is greater than oldVersion.
  */
 public class FileChooser {
+    /** the parent frame for dialogs. */
     private static Component parent;
+
+    /** the name of the exam block. */
     private final String title;
+
+    /** the existing version of the exam block. */
     private final double oldVersion;
+
+    /** the suggested new version number. */
     private double newVersion;
+
+    /** the text field for editing the title. */
     private JTextField titleField;
+
+    /** the text field for editing the version. */
     private JTextField versionField;
 
     /**

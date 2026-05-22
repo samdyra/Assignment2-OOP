@@ -38,7 +38,7 @@ public class ExamBlockController {
         view.addFinaliseButtonListener(e -> handleFinalise(model));
 
         // Construct and install menu items
-        JMenuBar menuBar = new JMenuBar();
+        final JMenuBar menuBar = new JMenuBar();
 
         // File menu
         JMenu fileMenu = new JMenu("File");

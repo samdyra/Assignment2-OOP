@@ -47,7 +47,7 @@ public class ExamBlockView implements ModelObserver {
     }
 
     /** The top level window frame. */
-    private JFrame frame;
+    private final JFrame frame;
 
     /** Reference to the model in MVC. */
     private ExamBlockModel model;
@@ -83,16 +83,16 @@ public class ExamBlockView implements ModelObserver {
     private JTabbedPane tabbedPane;
 
     /** Mapping from exam table row index to Exam object. */
-    private Map<Integer, Exam> examMap;
+    private final Map<Integer, Exam> examMap;
 
     /** Mapping from tree session node to Session object. */
-    private Map<DefaultMutableTreeNode, Session> sessionNodeMap;
+    private final Map<DefaultMutableTreeNode, Session> sessionNodeMap;
 
     /** Mapping from tree venue node to Venue object. */
-    private Map<DefaultMutableTreeNode, Venue> venueNodeMap;
+    private final Map<DefaultMutableTreeNode, Venue> venueNodeMap;
 
     /** Mapping from tree exam node to Exam object. */
-    private Map<DefaultMutableTreeNode, Exam> examNodeMap;
+    private final Map<DefaultMutableTreeNode, Exam> examNodeMap;
 
     /** Whether changes have been made since last finalise. */
     private boolean dirty;
@@ -125,7 +125,7 @@ public class ExamBlockView implements ModelObserver {
      * @return the panel object
      */
     public JPanel createTopPanel() {
-        JPanel topPanel = new JPanel(new BorderLayout());
+        final JPanel topPanel = new JPanel(new BorderLayout());
 
         // Left: exam table with label
         JPanel examPanel = new JPanel(new BorderLayout());
@@ -134,8 +134,7 @@ public class ExamBlockView implements ModelObserver {
         examPanel.add(examLabel, BorderLayout.NORTH);
 
         examTableModel = new DefaultTableModel(
-                new String[]{"Int.", "Subject", "Date", "Time", "AARA",
-                        "Non."}, 0) {
+                new String[]{"Int.", "Subject", "Date", "Time", "AARA", "Non."}, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -209,7 +208,7 @@ public class ExamBlockView implements ModelObserver {
      * @return the panel
      */
     public JPanel createBottomPanel() {
-        JPanel bottomPanel = new JPanel(new BorderLayout());
+        final JPanel bottomPanel = new JPanel(new BorderLayout());
         tabbedPane = new JTabbedPane();
 
         // Create empty tabs
@@ -674,7 +673,10 @@ public class ExamBlockView implements ModelObserver {
      * @param version new version
      */
     public void setVersion(double version) {
-        // Update title bar with new version
+        if (model != null) {
+            frame.setTitle("Exam Block Manager - " + model.getTitle()
+                    + " (v" + version + ")");
+        }
     }
 
     /**
@@ -822,7 +824,7 @@ public class ExamBlockView implements ModelObserver {
      */
     private void autoSizeColumns(JTable table) {
         for (int col = 0; col < table.getColumnCount(); col++) {
-            int maxWidth = 0;
+            int maxWidth;
             // Check header width
             String headerValue = table.getColumnName(col);
             maxWidth = table.getFontMetrics(table.getFont())

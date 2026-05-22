@@ -88,7 +88,8 @@ public class SessionList extends ListManager<Session> {
 
     /**
      * Find or create this session and work out how many students in total.
-     * If there is no existing session, prints: "There is currently no exam session in that venue at that time."
+     * If there is no existing session, prints: "There is currently no exam session
+     * in that venue at that time."
      * and also prints: "Creating a session..." and creates a suitable session.
      * When creating the new session, we first determine the next unique session number
      * for this venue (suggest you may want to use a private helper method to do this).

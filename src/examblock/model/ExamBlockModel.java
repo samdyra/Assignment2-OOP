@@ -15,17 +15,40 @@ import examblock.view.components.FileChooser;
  * data in the app
  */
 public class ExamBlockModel {
+    /** the global object registry. */
     private Registry registry;
+
+    /** the exam block title. */
     private String title;
+
+    /** the current version number. */
     private double version;
+
+    /** the currently loaded filename. */
     private String filename;
+
+    /** the list of all subjects. */
     private SubjectList subjects;
+
+    /** the list of all units. */
     private UnitList units;
+
+    /** the list of all students. */
     private StudentList students;
+
+    /** the list of all exams. */
     private ExamList exams;
+
+    /** the list of all rooms. */
     private RoomList rooms;
+
+    /** the list of all venues. */
     private VenueList venues;
+
+    /** the list of all sessions. */
     private SessionList sessions;
+
+    /** the list of registered observers. */
     private final List<ModelObserver> observers;
 
     /**
