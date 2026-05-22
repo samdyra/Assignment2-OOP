@@ -18,15 +18,34 @@ import java.util.List;
  * existing schedule. Session numbers do not have to necessarily be sequential.
  */
 public class Session implements StreamManager, ManageableListItem {
+    /** the exam venue for this session. */
     private Venue venue;
+
+    /** the session number, unique within a venue. */
     private int sessionNumber;
+
+    /** the date of this session. */
     private LocalDate day;
+
+    /** the start time of this session. */
     private LocalTime start;
+
+    /** the list of exams scheduled in this session. */
     private List<Exam> exams;
+
+    /** the 2D grid of desks in this session. */
     private Desk[][] desks;
+
+    /** the global object registry. */
     private Registry registry;
+
+    /** the number of rows of desks. */
     private int rows;
+
+    /** the number of columns of desks. */
     private int columns;
+
+    /** the total number of desks available. */
     private int totalDesks;
 
     /**
@@ -65,7 +84,7 @@ public class Session implements StreamManager, ManageableListItem {
      *                 list objects
      * @param nthItem  the index number of this serialized object
      * @throws IOException      on any read failure
-     * @throws RuntimeException
+     * @throws RuntimeException runtime exception
      */
     public Session(BufferedReader br, Registry registry, int nthItem)
             throws IOException, RuntimeException {
@@ -76,10 +95,8 @@ public class Session implements StreamManager, ManageableListItem {
 
     /**
      * Used to write data to the disk.
-     *
      * The format of the text written to the stream must be matched exactly by
      * streamIn, so it is very important to format the output as described.
-     *
      * 1. Venue: V1+V2+V3, Session Number: 1, Day: 2025-03-10, Start: 12:30,
      * Student Count: 53, Exams: 2
      * Year 12 Internal Assessment Literature
@@ -139,7 +156,6 @@ public class Session implements StreamManager, ManageableListItem {
      * be allowed to propagate out to the calling method, which co-ordinates the
      * streaming. Any other exceptions should be converted to RuntimeExceptions
      * and rethrown.
-     *
      * For the format of the text in the input stream, refer to the
      * {@code streamOut} documentation.
      *
@@ -171,7 +187,8 @@ public class Session implements StreamManager, ManageableListItem {
      */
     @Override
     public String getFullDetail() {
-        // example: 1. Venue: V1+V2+V3, Session Number: 1, Day: 2025-03-10, Start: 12:30, Student Count: 53, Exams: 2
+        // example: 1. Venue: V1+V2+V3, Session Number: 1,
+        // Day: 2025-03-10, Start: 12:30, Student Count: 53, Exams: 2
         return "Venue: " + venue.venueId()
                 + ", Session Number: " + sessionNumber
                 + ", Day: " + day
@@ -311,39 +328,46 @@ public class Session implements StreamManager, ManageableListItem {
      * @param cohort   all the Year 12 students.
      */
     public void allocateStudents(ExamList allExams, StudentList cohort) {
-        // avoid clashes
         detectClashes(cohort);
 
-        // check if students will fit
         int totalStudents = countStudents();
         if (totalStudents > totalDesks) {
             return;
-        }
-
-        // calculate spacing strategy
-        int gaps = totalDesks - totalStudents;
-        boolean skipColumns = totalStudents < (totalDesks / 2);
-        if (skipColumns) {
-            gaps = (totalDesks / 2) - totalStudents;
-        }
-
-        // calculate gaps between exam groups
-        int examCount = exams.size();
-        int interGaps = 0;
-        if (examCount > 1) {
-            interGaps = gaps / (examCount - 1);
         }
 
         // sort all students alphabetically
         List<Student> allStudents = cohort.all();
         sortStudentsAlphabetically(allStudents);
 
-        // allocate students per exam
-        int nextDesk = 1;
-        for (Exam exam : exams) {
-            nextDesk = allocateExamStudents(exam, allStudents, nextDesk, skipColumns);
-            // add gap between exam groups
-            nextDesk += interGaps;
+        if (exams.size() == 1) {
+            // single exam (maximize spacing between students)
+            int studentCols = (totalStudents + rows - 1) / rows;
+            int emptyCols = columns - studentCols;
+            int colGap = 0;
+            if (studentCols > 1 && emptyCols % (studentCols - 1) == 0) {
+                colGap = emptyCols / (studentCols - 1);
+            }
+            allocateExamStudents(exams.getFirst(), allStudents, 1, colGap);
+        } else {
+            // multiple exams -> inter-exam gaps take priority (note see example in bb)
+            // "Gaps between exams take priority over gaps between student columns."
+            int totalStudentCols = 0;
+            for (Exam exam : exams) {
+                int count = countExamStudents(exam, allStudents);
+                totalStudentCols += (count + rows - 1) / rows;
+            }
+            int emptyCols = columns - totalStudentCols;
+            int interGap = emptyCols / (exams.size() - 1);
+            int interRemainder = emptyCols % (exams.size() - 1);
+
+            int nextCol = 0;
+            for (int i = 0; i < exams.size(); i++) {
+                int startDesk = nextCol * rows + 1;
+                int count = countExamStudents(exams.get(i), allStudents);
+                int examCols = (count + rows - 1) / rows;
+                allocateExamStudents(exams.get(i), allStudents, startDesk, 0);
+                nextCol += examCols + interGap + (i < interRemainder ? 1 : 0);
+            }
         }
     }
 
@@ -443,12 +467,10 @@ public class Session implements StreamManager, ManageableListItem {
                 + 5 * this.start.hashCode();
     }
 
-    /**
-     * Detect students who are scheduled for multiple exams in this session
-     * and flag them as clashes.
-     *
-     * @param cohort all Year 12 students
-     */
+    // HELPER FUNCTIONS FOR ALLOCATION
+
+    // Detect students who are scheduled for multiple exams in this session
+    // and flag them as clashes.
     private void detectClashes(StudentList cohort) {
         // Collect all exam subjects in this session
         List<Subject> examSubjects = new ArrayList<>();
@@ -478,36 +500,21 @@ public class Session implements StreamManager, ManageableListItem {
         }
     }
 
-    /**
-     * Sort students alphabetically by family name, then given names.
-     *
-     * @param students the list to sort
-     */
+    // Sort students alphabetically by family name, then given names.
     private void sortStudentsAlphabetically(List<Student> students) {
         students.sort(Comparator.comparing(Student::familyName));
     }
 
-    /**
-     * Allocate students for a single exam to desks, starting from nextDesk.
-     * Only assigns students whose AARA status matches the venue and who
-     * take this exam's subject.
-     *
-     * @param exam         the exam to allocate students for
-     * @param allStudents  sorted list of all students
-     * @param nextDesk     the desk number to start from (1-based)
-     * @param skipColumns  true to skip every other column for spacing
-     * @return the next available desk number after allocation
-     */
-    private int allocateExamStudents(Exam exam, List<Student> allStudents,
-                                     int nextDesk, boolean skipColumns) {
+    // Allocate students for a single exam to desks, starting from nextDesk.
+    private void allocateExamStudents(Exam exam, List<Student> allStudents,
+                                     int nextDesk, int colGap) {
         Subject subject = exam.getSubject();
+        int studentsInCol = 0;
 
         for (Student student : allStudents) {
             if (student.isAara() != venue.isAara()) {
                 continue;
             }
-
-            // make sure student takes this subject
             boolean takesSubject = false;
             for (Subject studentSubject : student.getSubjects().all()) {
                 if (studentSubject.equals(subject)) {
@@ -515,12 +522,10 @@ public class Session implements StreamManager, ManageableListItem {
                     break;
                 }
             }
-
             if (!takesSubject) {
                 continue;
             }
 
-            // convert desk number to row/col
             int col = (nextDesk - 1) / rows;
             int row = (nextDesk - 1) % rows;
 
@@ -529,25 +534,37 @@ public class Session implements StreamManager, ManageableListItem {
                 desks[row][col].setExam(exam);
             }
 
-            // skip to next column if spacing is on and at end of column
-            if (skipColumns && nextDesk % rows == 0) {
-                nextDesk += rows;
-            }
+            studentsInCol++;
             nextDesk++;
-        }
 
-        return nextDesk;
+            // after fill the col, skip colGap columns
+            if (studentsInCol == rows && colGap > 0) {
+                nextDesk += colGap * rows;
+                studentsInCol = 0;
+            }
+        }
     }
 
+    // count exam students for a single exam, used for allocation
+    private int countExamStudents(Exam exam, List<Student> allStudents) {
+        int count = 0;
+        for (Student student : allStudents) {
+            if (student.isAara() != venue.isAara()) {
+                continue;
+            }
+            for (Subject s : student.getSubjects().all()) {
+                if (s.equals(exam.getSubject())) {
+                    count++;
+                    break;
+                }
+            }
+        }
+        return count;
+    }
 
-    /**
-     * Parse the session header line and set venue, session number, day, start.
-     *
-     * @param br      reader to read from
-     * @param nthItem position in stream
-     *
-     * @return the number of exams in this session
-     */
+    // HELPER FUNCTIONS FOR ALLOCATION (END)
+
+    // parse the session header line and set venue, session number, day, start.
     private int parseSessionHeader(BufferedReader br, int nthItem) {
         String header = Utilities.getLine(br);
         if (header == null) {
@@ -599,9 +616,7 @@ public class Session implements StreamManager, ManageableListItem {
         return examCount;
     }
 
-    /**
-     * create empty desk grid that match venue dimensions and assign desk numbers
-     */
+    // create empty desk grid that match venue dimensions and assign desk numbers
     private void initializeDesks() {
         this.rows = venue.getRows();
         this.columns = venue.getColumns();
@@ -619,14 +634,8 @@ public class Session implements StreamManager, ManageableListItem {
         }
     }
 
-    /**
-     * Read one exam title and its desk allocations from the stream.
-     *
-     * @param br      reader to read from
-     * @param nthItem position in stream for error messages
-     * @throws IOException      on read failure
-     */
-    private void readExamAndDesks(BufferedReader br, int nthItem) throws IOException {
+    // read one exam title and its desk allocations from the stream.
+    private void readExamAndDesks(BufferedReader br, int nthItem) {
         // exam title example "Year 12 Internal Assessment Literature"
         String examTitle = Utilities.getLine(br);
         if (examTitle == null) {
@@ -654,16 +663,9 @@ public class Session implements StreamManager, ManageableListItem {
         }
     }
 
-    /**
-     * Read a single desk allocation line and place it in the grid.
-     *
-     * @param br      reader to read from
-     * @param exam    the exam for this desk
-     *
-     * @param nthItem position in stream for error messages
-     * @throws RuntimeException on format error
-     */
-    private void readDeskAllocation(BufferedReader br, Exam exam, int nthItem) throws RuntimeException {
+    // Read a single desk allocation line and place it in the grid.
+    private void readDeskAllocation(BufferedReader br, Exam exam, int nthItem)
+            throws RuntimeException {
         String deskLine = Utilities.getLine(br);
         if (deskLine == null) {
             throw new RuntimeException("EOF reading desk in Session " + nthItem);
