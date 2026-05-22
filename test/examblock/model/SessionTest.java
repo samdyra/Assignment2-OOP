@@ -363,8 +363,9 @@ public class SessionTest {
     }
 
     // complex stuffs regarding desk allocation algo
-
     // allocateStudents tests
+
+    // normal flow
 
     @Test
     public void testAllocateStudentsBasic() {
@@ -385,8 +386,7 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // b comes before M alphabetically
-        // first desk should be brown not sam
+        // B comes before M alphabetically
         assertEquals("Brown", session.getDesk(0, 0).deskFamilyName());
     }
 
@@ -414,15 +414,16 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // Alphabetical: Asam, Beni, Clark
+        // ordered Asam, Beni, Clark
         assertEquals("Asam", session.getDesk(0, 0).deskFamilyName());
         assertEquals("Beni", session.getDesk(1, 0).deskFamilyName());
         assertEquals("Clark", session.getDesk(2, 0).deskFamilyName());
     }
 
+    // aara not included
+
     @Test
     public void testAllocateStudentsAaraNotIncluded() {
-        // aara student not be placed in non-AARA venue
         Student aaraStudent = new Student(9999444444L, "Dwiputra", "Sam",
                 1, 1, 2007, "Blue", true, registry);
         aaraStudent.addSubject(subject1);
@@ -435,18 +436,17 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // should be empty
         assertTrue(session.getDesk(0, 0).deskFamilyName().isEmpty());
     }
 
+    // wrong subject
     @Test
     public void testAllocateStudentsWrongSubjectNotIncluded() {
-        // Student taking a different subject should not be placed
         Student wrongSubject = new Student(9999555555L, "Dwiputra", "Sam",
                 1, 1, 2007, "Blue", false, registry);
-        wrongSubject.addSubject(subject2); // literature
+        wrongSubject.addSubject(subject2);
 
-        session.scheduleExam(exam1); // english exam
+        session.scheduleExam(exam1);
 
         ExamList examList = new ExamList(registry);
         StudentList studentList = new StudentList(registry);
@@ -457,13 +457,13 @@ public class SessionTest {
         assertTrue(session.getDesk(0, 0).deskFamilyName().isEmpty());
     }
 
+    // col by col filling logic test
     @Test
     public void testAllocateStudentsColumnByColumn() {
-        // 5 rows and desk 6 should be on row col 0,1
-        // mock student
-        for (int i = 0; i < 6; i++) {
+        // 20 students fill 4 columns tightly in 5x5 venue (no spacing)
+        for (int i = 0; i < 20; i++) {
             Student student = new Student(9999100000L + i,
-                    "Student" + (char) ('A' + i), "Name" + (char) ('A' + i),
+                    "Student" + (char) ('A' + i), "Name" + String.format("%02d", i),
                     1, 1, 2007, "Blue", false, registry);
             student.addSubject(subject1);
         }
@@ -478,28 +478,29 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // 5 row in the first col
+        // 4 columns fully packed (20 students / 5 rows = 4 columns)
+        // With only 1 empty column, no equal spacing possible (1/3 gaps)
+        // So students should be in consecutive columns
         assertFalse(session.getDesk(0, 0).deskFamilyName().isEmpty());
         assertFalse(session.getDesk(4, 0).deskFamilyName().isEmpty());
-        // next should be in second col
         assertFalse(session.getDesk(0, 1).deskFamilyName().isEmpty());
+        assertFalse(session.getDesk(0, 2).deskFamilyName().isEmpty());
+        assertFalse(session.getDesk(0, 3).deskFamilyName().isEmpty());
     }
 
-    // multiple exams in same session tests
-
+    // multiple exam
     @Test
     public void testAllocateStudentsMultipleExams() {
-        // Two exams in the same session
         Student studentEnglish = new Student(9999111111L, "Dwiputra", "Mulia",
                 1, 1, 2007, "Blue", false, registry);
-        studentEnglish.addSubject(subject1); // English
+        studentEnglish.addSubject(subject1);
 
         Student studentLit = new Student(9999222222L, "Sam", "Adams",
                 2, 2, 2007, "Red", false, registry);
-        studentLit.addSubject(subject2); // Literature
+        studentLit.addSubject(subject2);
 
-        session.scheduleExam(exam1); // English
-        session.scheduleExam(exam2); // Literature
+        session.scheduleExam(exam1);
+        session.scheduleExam(exam2);
 
         ExamList examList = new ExamList(registry);
         StudentList studentList = new StudentList(registry);
@@ -508,19 +509,16 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // Both students should be assigned somewhere
         boolean foundMulia = false;
         boolean foundAdams = false;
         for (int col = 0; col < venue.getColumns(); col++) {
             for (int row = 0; row < venue.getRows(); row++) {
                 Desk desk = session.getDesk(row, col);
-                if (desk != null) {
-                    if ("Mulia".equals(desk.deskFamilyName())) {
-                        foundMulia = true;
-                    }
-                    if ("Adams".equals(desk.deskFamilyName())) {
-                        foundAdams = true;
-                    }
+                if ("Mulia".equals(desk.deskFamilyName())) {
+                    foundMulia = true;
+                }
+                if ("Adams".equals(desk.deskFamilyName())) {
+                    foundAdams = true;
                 }
             }
         }
@@ -529,31 +527,27 @@ public class SessionTest {
     }
 
     // clash detection test
-
     @Test
     public void testAllocateStudentsClashDetection() {
-        // Student takes BOTH subjects that have exams in this session
         Student clashStudent = new Student(9999111111L, "Dwiputra", "Mulia",
                 1, 1, 2007, "Blue", false, registry);
-        clashStudent.addSubject(subject1); // English
-        clashStudent.addSubject(subject2); // Literature
+        clashStudent.addSubject(subject1);
+        clashStudent.addSubject(subject2);
 
-        session.scheduleExam(exam1); // English
-        session.scheduleExam(exam2); // Literature
+        session.scheduleExam(exam1);
+        session.scheduleExam(exam2);
 
         ExamList examList = new ExamList(registry);
         StudentList studentList = new StudentList(registry);
         studentList.add(clashStudent);
 
-        // should not throw, just print warning
         session.allocateStudents(examList, studentList);
 
-        // student should still be allocated (clash is flagged, not prevented)
         boolean foundStudent = false;
         for (int col = 0; col < venue.getColumns(); col++) {
             for (int row = 0; row < venue.getRows(); row++) {
                 Desk desk = session.getDesk(row, col);
-                if (desk != null && "Mulia".equals(desk.deskFamilyName())) {
+                if ("Mulia".equals(desk.deskFamilyName())) {
                     foundStudent = true;
                 }
             }
@@ -561,51 +555,85 @@ public class SessionTest {
         assertTrue(foundStudent);
     }
 
-    // spacing tests
 
+
+    // Individual Assignment 2 student-to-desk allocation clarifications (announcement from BB)
     @Test
     public void testAllocateStudentsSpacingWhenFewStudents() {
-        // 2 students in 25 desks (should have gaps between them)
-        Student student1 = new Student(9999111111L, "Alice", "Adams",
-                1, 1, 2007, "Blue", false, registry);
-        student1.addSubject(subject1);
-
-        Student student2 = new Student(9999222222L, "Bob", "Baker",
-                2, 2, 2007, "Red", false, registry);
-        student2.addSubject(subject1);
+        // single exam, 6 student in 5x5 venu
+        // 2 student columns 3 empty cols, 1 gap -> gap of 3
+        // Expected to student cols at 0 and 4
+        for (int i = 0; i < 6; i++) {
+            Student student = new Student(9999100000L + i,
+                    "Student", "Name" + String.format("%02d", i),
+                    1, 1, 2007, "Blue", false, registry);
+            student.addSubject(subject1);
+        }
 
         session.scheduleExam(exam1);
 
         ExamList examList = new ExamList(registry);
         StudentList studentList = new StudentList(registry);
-        studentList.add(student1);
-        studentList.add(student2);
+        for (Student student : registry.getAll(Student.class)) {
+            studentList.add(student);
+        }
 
         session.allocateStudents(examList, studentList);
 
-        // find their desk numbers
-        int desk1 = -1;
-        int desk2 = -1;
-        for (int col = 0; col < venue.getColumns(); col++) {
-            for (int row = 0; row < venue.getRows(); row++) {
-                Desk desk = session.getDesk(row, col);
-                if (desk != null && "Adams".equals(desk.deskFamilyName())) {
-                    desk1 = desk.deskNumber();
-                }
-                if (desk != null && "Baker".equals(desk.deskFamilyName())) {
-                    desk2 = desk.deskNumber();
+        // Find which columns have students
+        int firstStudentCol = -1;
+        int lastStudentCol = -1;
+        for (int col = 0; col < 5; col++) {
+            for (int row = 0; row < 5; row++) {
+                if (!session.getDesk(row, col).deskFamilyName().isEmpty()) {
+                    if (firstStudentCol == -1) {
+                        firstStudentCol = col;
+                    }
+                    lastStudentCol = col;
                 }
             }
         }
-        assertTrue(desk1 > 0);
-        assertTrue(desk2 > 0);
-        // students should have gaps (more than 1)
-        assertTrue((desk2 - desk1) > 1);
+        // gap between student columns should be at least 3
+        assertTrue(lastStudentCol - firstStudentCol >= 3);
     }
 
     @Test
+    public void testAllocateNoWastedColumnsAtEnd() {
+        // 10 students in 5x5 venue, 2 student columns needed
+        // should spread  (not grouped at the start)
+        for (int i = 0; i < 10; i++) {
+            Student student = new Student(9999100000L + i,
+                    // %02d leading zeros to 2 digits 00 01 etc
+                    "Student", "Name" + String.format("%02d", i),
+                    1, 1, 2007, "Blue", false, registry);
+            student.addSubject(subject1);
+        }
+
+        session.scheduleExam(exam1);
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        for (Student student : registry.getAll(Student.class)) {
+            studentList.add(student);
+        }
+
+        session.allocateStudents(examList, studentList);
+
+        // students should be spread beyond just columns 0 and 1
+        boolean hasStudentBeyondCol1 = false;
+        for (int col = 2; col < 5; col++) {
+            for (int row = 0; row < 5; row++) {
+                if (!session.getDesk(row, col).deskFamilyName().isEmpty()) {
+                    hasStudentBeyondCol1 = true;
+                }
+            }
+        }
+        assertTrue(hasStudentBeyondCol1);
+    }
+
+    // mult exam with diff students should be separated (if possible)
+    @Test
     public void testAllocateStudentsMultipleExamsSeparated() {
-        // students from different exams should be separated
         Student studentEnglish = new Student(9999111111L, "Alice", "Adams",
                 1, 1, 2007, "Blue", false, registry);
         studentEnglish.addSubject(subject1);
@@ -624,23 +652,124 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // find student cols
         int col1 = -1;
         int col2 = -1;
         for (int col = 0; col < venue.getColumns(); col++) {
             for (int row = 0; row < venue.getRows(); row++) {
                 Desk desk = session.getDesk(row, col);
-                if (desk != null && "Adams".equals(desk.deskFamilyName())) {
+                if ("Adams".equals(desk.deskFamilyName())) {
                     col1 = col;
                 }
-                if (desk != null && "Baker".equals(desk.deskFamilyName())) {
+                if ("Baker".equals(desk.deskFamilyName())) {
                     col2 = col;
                 }
             }
         }
         assertTrue(col1 >= 0);
         assertTrue(col2 >= 0);
-        // students from different exams should be in different columns (if many desks)
         assertNotEquals(col1, col2);
+    }
+
+    @Test
+    public void testAllocateInterExamGapsPriority() {
+        // 2 exams, 1 student each, 5 columns
+        // 2 student cols, 3 empty → all 3 go to inter-exam gap
+        Student s1 = new Student(9999111111L, "Alice", "Adams",
+                1, 1, 2007, "Blue", false, registry);
+        s1.addSubject(subject1);
+
+        Student s2 = new Student(9999222222L, "Bob", "Baker",
+                2, 2, 2007, "Red", false, registry);
+        s2.addSubject(subject2);
+
+        session.scheduleExam(exam1);
+        session.scheduleExam(exam2);
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        studentList.add(s1);
+        studentList.add(s2);
+
+        session.allocateStudents(examList, studentList);
+
+        int colAdams = -1;
+        int colBaker = -1;
+        for (int col = 0; col < 5; col++) {
+            for (int row = 0; row < 5; row++) {
+                Desk desk = session.getDesk(row, col);
+                if ("Adams".equals(desk.deskFamilyName())) {
+                    colAdams = col;
+                }
+                if ("Baker".equals(desk.deskFamilyName())) {
+                    colBaker = col;
+                }
+            }
+        }
+        assertTrue(colAdams >= 0);
+        assertTrue(colBaker >= 0);
+        // All 3 empty columns should be inter-exam gap
+        assertTrue(colBaker - colAdams >= 4);
+    }
+
+    // ##### Gaps between exam regions should not differ by more than one [empty desk].
+    @Test
+    public void testAllocateInterExamGapsDifferByAtMostOne() {
+        // 3 exams, 1 student each, 5 columns
+        // 3 student cols, 2 empty, 2 inter-gaps → each gap = 1
+        // Expected: cols 0, 2, 4
+        Subject subject3 = new Subject("Physics", "Physics desc.", registry);
+        Exam exam3 = new Exam(subject3, Exam.ExamType.INTERNAL,
+                10, 3, 2025, 8, 30, registry);
+
+        Student s1 = new Student(9999111111L, "Alice", "Adams",
+                1, 1, 2007, "Blue", false, registry);
+        s1.addSubject(subject1);
+        Student s2 = new Student(9999222222L, "Bob", "Baker",
+                2, 2, 2007, "Red", false, registry);
+        s2.addSubject(subject2);
+        Student s3 = new Student(9999333333L, "Charlie", "Clark",
+                3, 3, 2007, "Green", false, registry);
+        s3.addSubject(subject3);
+
+        session.scheduleExam(exam1);
+        session.scheduleExam(exam2);
+        session.scheduleExam(exam3);
+
+        ExamList examList = new ExamList(registry);
+        StudentList studentList = new StudentList(registry);
+        studentList.add(s1);
+        studentList.add(s2);
+        studentList.add(s3);
+
+        session.allocateStudents(examList, studentList);
+
+        int col1 = -1;
+        int col2 = -1;
+        int col3 = -1;
+        for (int col = 0; col < 5; col++) {
+            for (int row = 0; row < 5; row++) {
+                Desk desk = session.getDesk(row, col);
+                if ("Adams".equals(desk.deskFamilyName())) {
+                    col1 = col;
+                }
+                if ("Baker".equals(desk.deskFamilyName())) {
+                    col2 = col;
+                }
+                if ("Clark".equals(desk.deskFamilyName())) {
+                    col3 = col;
+                }
+            }
+        }
+        assertTrue(col1 >= 0);
+        assertTrue(col2 >= 0);
+        assertTrue(col3 >= 0);
+
+        int gap1 = col2 - col1;
+        int gap2 = col3 - col2;
+        // Gaps must differ by at most 1
+        assertTrue(Math.abs(gap1 - gap2) <= 1);
+        // Each gap should be at least 1 (not packed together)
+        assertTrue(gap1 >= 2);
+        assertTrue(gap2 >= 2);
     }
 }
