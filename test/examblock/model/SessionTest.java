@@ -545,10 +545,10 @@ public class SessionTest {
         StudentList studentList = new StudentList(registry);
         studentList.add(clashStudent);
 
-        // Should not throw, just print a warning
+        // should not throw, just print warning
         session.allocateStudents(examList, studentList);
 
-        // Student should still be allocated (clash is flagged, not prevented)
+        // student should still be allocated (clash is flagged, not prevented)
         boolean foundStudent = false;
         for (int col = 0; col < venue.getColumns(); col++) {
             for (int row = 0; row < venue.getRows(); row++) {
