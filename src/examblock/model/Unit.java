@@ -9,9 +9,16 @@ import java.io.IOException;
  * These are typically Unit 3 or Unit 4 for the Year 12 units, but may be different.
  */
 public class Unit implements StreamManager, ManageableListItem {
+    /** the text description of this unit. */
     private String description;
+
+    /** the title of this unit. */
     private String title;
+
+    /** the single character unit identifier. */
     private Character unitId;
+
+    /** the parent subject of this unit. */
     private Subject subject;
 
     /**
@@ -34,7 +41,8 @@ public class Unit implements StreamManager, ManageableListItem {
      *                    separated by one or more spaces or other punctuation.
      * @param registry    the global object registry
      */
-    public Unit(Subject subject, Character unitId, String title, String description, Registry registry) {
+    public Unit(Subject subject, Character unitId, String title,
+                String description, Registry registry) {
         this.title = sanitiseTitle(title);
         this.description = sanitiseDescription(description);
         this.subject = subject;
@@ -51,17 +59,16 @@ public class Unit implements StreamManager, ManageableListItem {
      * @throws IOException      on any read failure
      * @throws RuntimeException  any runtime error
      */
-    public Unit(BufferedReader br, Registry registry, int nthItem) throws IOException, RuntimeException {
+    public Unit(BufferedReader br, Registry registry, int nthItem)
+            throws IOException, RuntimeException {
         streamIn(br, registry, nthItem);
         registry.add(this, Unit.class);
     }
 
     /**
      * Used to write data to the disk.
-     *
      * The format of the text written to the stream must be matched exactly by streamIn,
      * so it is very important to format the output as described.
-     *
      * 3. ANCIENT HISTORY
      * Ancient History, Unit 3: Reconstructing the Ancient World
      * "Investigate significant historical periods through an analysis of relevant
@@ -84,7 +91,6 @@ public class Unit implements StreamManager, ManageableListItem {
      * Used to read data from the disk. IOExceptions and RuntimeExceptions must be allowed
      * to propagate out to the calling method, which co-ordinates the streaming. Any other
      * exceptions should be converted to RuntimeExceptions and rethrown.
-     *
      * For the format of the text in the input stream, refer to the {@code streamOut}
      * documentation.
      *
@@ -96,7 +102,8 @@ public class Unit implements StreamManager, ManageableListItem {
      * @throws RuntimeException on any logic related issues
      */
     @Override
-    public void streamIn(BufferedReader br, Registry registry, int nthItem) throws IOException, RuntimeException {
+    public void streamIn(BufferedReader br, Registry registry, int nthItem)
+            throws IOException, RuntimeException {
         String heading = Utilities.getLine(br);
         if (heading == null) {
             throw new RuntimeException("EOF reading Unit #" + nthItem);
