@@ -50,7 +50,9 @@ public class FileChooser {
      * @param oldVersion the existing version of the Exam Block being saved.
      */
     public FileChooser(String title, double oldVersion) {
-        this(title, oldVersion, oldVersion + 0.1);
+        this(title, oldVersion,
+                // to make sure no floating precision error
+                Math.round((oldVersion + 0.1) * 10.0) / 10.0);
     }
 
     /**

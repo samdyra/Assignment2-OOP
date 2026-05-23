@@ -242,14 +242,19 @@ public class ExamBlockModel {
      */
     public boolean saveToFile(Registry registry, String filename,
                               String title, double version) {
-        // If no filename, ask user for one
+        // if no filename, ask user for one
         if (filename == null) {
             FileChooser chooser = new FileChooser(title, version);
-            String selectedFilename = chooser.save(this.filename, Utilities.FileType.EBD);
+            String selectedFilename = chooser.save(this.filename,
+                    Utilities.FileType.EBD);
             if (selectedFilename == null || selectedFilename.isEmpty()) {
                 return false;
             }
             filename = selectedFilename;
+
+            // get user entered title and ver
+            title = chooser.title();
+            version = chooser.version();
         }
 
         try {
