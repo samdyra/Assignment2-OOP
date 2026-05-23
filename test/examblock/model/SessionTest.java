@@ -460,7 +460,7 @@ public class SessionTest {
     // col by col filling logic test
     @Test
     public void testAllocateStudentsColumnByColumn() {
-        // 20 students fill 4 columns tightly in 5x5 venue (no spacing)
+        // 20 students fill 4 cols tightly in 5x5 venue (no spacing)
         for (int i = 0; i < 20; i++) {
             Student student = new Student(9999100000L + i,
                     "Student" + (char) ('A' + i), "Name" + String.format("%02d", i),
@@ -479,8 +479,8 @@ public class SessionTest {
         session.allocateStudents(examList, studentList);
 
         // 4 columns fully packed (20 students / 5 rows = 4 columns)
-        // With only 1 empty column, no equal spacing possible (1/3 gaps)
-        // So students should be in consecutive columns
+        // 1 empty col. no equal spacing possible (1/3 gaps)
+        // - students should be in consecutive columns
         assertFalse(session.getDesk(0, 0).deskFamilyName().isEmpty());
         assertFalse(session.getDesk(4, 0).deskFamilyName().isEmpty());
         assertFalse(session.getDesk(0, 1).deskFamilyName().isEmpty());
@@ -580,7 +580,7 @@ public class SessionTest {
 
         session.allocateStudents(examList, studentList);
 
-        // Find which columns have students
+        // find which columns have students
         int firstStudentCol = -1;
         int lastStudentCol = -1;
         for (int col = 0; col < 5; col++) {
@@ -707,7 +707,7 @@ public class SessionTest {
         }
         assertTrue(colAdams >= 0);
         assertTrue(colBaker >= 0);
-        // All 3 empty columns should be inter-exam gap
+        // all 3 empty col should be inter exam gap
         assertTrue(colBaker - colAdams >= 4);
     }
 
@@ -716,7 +716,7 @@ public class SessionTest {
     public void testAllocateInterExamGapsDifferByAtMostOne() {
         // 3 exams, 1 student each, 5 columns
         // 3 student cols, 2 empty, 2 inter-gaps → each gap = 1
-        // Expected: cols 0, 2, 4
+        // expected: cols 0, 2, 4
         Subject subject3 = new Subject("Physics", "Physics desc.", registry);
         Exam exam3 = new Exam(subject3, Exam.ExamType.INTERNAL,
                 10, 3, 2025, 8, 30, registry);
@@ -766,9 +766,9 @@ public class SessionTest {
 
         int gap1 = col2 - col1;
         int gap2 = col3 - col2;
-        // Gaps must differ by at most 1
+        // gaps must differ by at most 1
         assertTrue(Math.abs(gap1 - gap2) <= 1);
-        // Each gap should be at least 1 (not packed together)
+        // each gap should be at least 1 (not packed together)
         assertTrue(gap1 >= 2);
         assertTrue(gap2 >= 2);
     }

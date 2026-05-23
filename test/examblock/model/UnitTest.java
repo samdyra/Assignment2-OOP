@@ -259,6 +259,10 @@ public class UnitTest {
     public void testToTableRow() {
         Object[] row = unit.toTableRow();
         assertNotNull(row);
-        assertTrue(row.length > 0);
+        assertEquals(4, row.length);
+        assertEquals("Accounting", row[0]);
+        assertEquals('3', row[1]);
+        assertEquals("Managing resources", row[2]);
+        assertEquals("Manage the resources of a sole trader business.", row[3]);
     }
 }

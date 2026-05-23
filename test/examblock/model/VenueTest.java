@@ -340,6 +340,9 @@ public class VenueTest {
     public void testToTableRow() {
         Object[] row = venue.toTableRow();
         assertNotNull(row);
-        assertTrue(row.length > 0);
+        assertEquals(3, row.length);
+        assertEquals("V1", row[0]);
+        assertEquals(25, row[1]);
+        assertEquals(false, row[2]);
     }
 }

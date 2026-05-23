@@ -281,5 +281,6 @@ public class SubjectTest {
         assertNotNull(row);
         assertTrue(row.length > 0);
         assertEquals("Accounting", row[0]);
+        assertEquals("The study of the management of financial resources of the public sector, businesses, and individuals.", row[1]);
     }
 }
