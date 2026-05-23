@@ -149,12 +149,6 @@ public class ExamBlockController {
     }
 
     private void handleFinalise(ExamBlockModel model) {
-        double oldVersion = model.getVersion();
         SessionHandler.finaliseExamBlock(model);
-
-        // only clear dirty if the ver changed
-        if (model.getVersion() > oldVersion) {
-            model.notifyObservers("finalised");
-        }
     }
 }
