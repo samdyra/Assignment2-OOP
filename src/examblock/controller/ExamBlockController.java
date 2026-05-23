@@ -18,21 +18,21 @@ public class ExamBlockController {
      * The C in MVC. The controller holds all the pieces, and controls the app.
      */
     public ExamBlockController() {
-        // Construct the model
+        // construct the model
         ExamBlockModel model = new ExamBlockModel();
 
-        // Construct the view
+        // construct the view
         ExamBlockView view = new ExamBlockView(model.getRegistry());
         view.setModel(model);
 
-        // Register the view as an observer
+        // register view as observer
         model.addObserver(view);
 
-        // Set parent for dialogs
+        // parents for dialogs
         DialogUtils.setParent(view.getFrame());
         FileChooser.setParent(view.getFrame());
 
-        // Add listeners
+        // assign listeners
         view.addAddButtonListener(e -> handleAdd(model, view));
         view.addClearButtonListener(e -> handleClear(view));
         view.addFinaliseButtonListener(e -> handleFinalise(model));
@@ -40,7 +40,7 @@ public class ExamBlockController {
         // Construct and install menu items
         final JMenuBar menuBar = new JMenuBar();
 
-        // File menu
+        // file menu
         JMenu fileMenu = new JMenu("File");
         JMenuItem loadItem = new JMenuItem("Load...");
         loadItem.addActionListener(e -> model.loadFromFile());
@@ -59,10 +59,36 @@ public class ExamBlockController {
         exitItem.addActionListener(e -> System.exit(0));
         fileMenu.add(exitItem);
 
-        // View menu
+        // view menu
         JMenu viewMenu = new JMenu("View");
+
+        // desk allocation menu
         JMenuItem deskItem = new JMenuItem("Desk Allocations...");
         deskItem.addActionListener(e -> {
+            // allocate students before showing (show latest)
+            model.getVenues().allocateStudents(
+                    model.getSessions(), model.getExams(), model.getStudents());
+
+            DefaultMutableTreeNode selectedNode = view.getSelectedTreeNode();
+            if (selectedNode != null) {
+                Session session = view.getSessionFromSessionNodeMap(selectedNode);
+                if (session != null) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(session.getVenue().venueId())
+                            .append(" (").append(session.getVenue().deskCount())
+                            .append(session.getVenue().isAara()
+                                    ? " AARA" : " Non-AARA")
+                            .append(" desks)")
+                            .append(System.lineSeparator());
+                    sb.append(session.getFullDetail());
+                    session.printDesks(sb);
+                    DialogUtils.showTextViewer(sb.toString(),
+                            "Desk Allocations",
+                            DialogUtils.ViewerOptions.SCROLL,
+                            Utilities.FileType.TXT);
+                    return;
+                }
+            }
             StringBuilder sb = new StringBuilder();
             model.getVenues().writeAllocations(sb, model.getSessions());
             DialogUtils.showTextViewer(sb.toString(),
@@ -71,8 +97,13 @@ public class ExamBlockController {
                     Utilities.FileType.TXT);
         });
         viewMenu.add(deskItem);
+
+        // finalize menu
         JMenuItem finaliseItem = new JMenuItem("Finalise Reports...");
         finaliseItem.addActionListener(e -> {
+            model.getVenues().allocateStudents(
+                    model.getSessions(), model.getExams(), model.getStudents());
+
             StringBuilder sb = new StringBuilder();
             model.getVenues().writeAllocations(sb, model.getSessions());
             DialogUtils.showTextViewer(sb.toString(),
