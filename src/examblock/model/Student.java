@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An object describing a single Year 12 Student.
@@ -518,10 +520,14 @@ public class Student implements StreamManager, ManageableListItem {
     public void removeSubject(Subject subject) {
         subjects.remove(subject);
         // remove exams associated with this subject
+        List<Exam> toRemove = new ArrayList<>();
         for (Exam exam : exams.all()) {
             if (exam.getSubject().equals(subject)) {
-                exams.remove(exam);
+                toRemove.add(exam);
             }
+        }
+        for (Exam exam : toRemove) {
+            exams.remove(exam);
         }
     }
 

@@ -149,7 +149,7 @@ public class Subject implements StreamManager, ManageableListItem {
      */
     @Override
     public Object[] toTableRow() {
-        return new Object[]{title};
+        return new Object[]{title, description};
     }
 
     /**
@@ -180,7 +180,7 @@ public class Subject implements StreamManager, ManageableListItem {
         text = text.replaceAll("\\.+$", "");
         // trim extra spaces
         text = text.trim();
-        // Split by one or more spaces
+        // split by one or more spaces
         String[] words = text.split("\\s+");
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < words.length; i++) {
@@ -209,14 +209,14 @@ public class Subject implements StreamManager, ManageableListItem {
      * @return the sanitised string
      */
     public String sanitiseDescription(String text) {
-        // Handle extra spaces
+        // handle extra spaces
         text = text.replaceAll("\\s+", " ");
         text = text.trim();
         // make sure start with cap
         if (!text.isEmpty()) {
             text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
         }
-        // Ensure ends with period
+        // ensure ends with period
         if (!text.isEmpty() && text.charAt(text.length() - 1) != '.') {
             text = text + ".";
         }

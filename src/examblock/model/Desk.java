@@ -176,6 +176,7 @@ public class Desk {
         for (String detail : details) {
             String[] pair = Utilities.keyValuePair(detail.trim());
             if (pair == null) {
+                this.givenAndInit = detail.trim();
                 continue;
             }
             switch (pair[0]) {

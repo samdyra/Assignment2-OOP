@@ -482,16 +482,16 @@ public class Session implements StreamManager, ManageableListItem {
 
     // HELPER FUNCTIONS FOR ALLOCATION
 
-    // Detect students who are scheduled for multiple exams in this session
+    // detect students who are scheduled for multiple exams in this session
     // and flag them as clashes.
     private void detectClashes(StudentList cohort) {
-        // Collect all exam subjects in this session
+        // collect all exam subjects in this session
         List<Subject> examSubjects = new ArrayList<>();
         for (Exam exam : exams) {
             examSubjects.add(exam.getSubject());
         }
 
-        // Check each student for multiple matches
+        // check each student for multiple matches
         for (Student student : cohort.all()) {
             if (student.isAara() != venue.isAara()) {
                 continue;
@@ -513,12 +513,12 @@ public class Session implements StreamManager, ManageableListItem {
         }
     }
 
-    // Sort students alphabetically by family name, then given names.
+    // sort students alphabetically by family name
     private void sortStudentsAlphabetically(List<Student> students) {
         students.sort(Comparator.comparing(Student::familyName));
     }
 
-    // Allocate students for a single exam to desks, starting from nextDesk.
+    // allocate students for a single exam to desks, starting from nextDesk.
     private void allocateExamStudents(Exam exam, List<Student> allStudents,
                                      int nextDesk, int colGap) {
         Subject subject = exam.getSubject();
@@ -676,7 +676,7 @@ public class Session implements StreamManager, ManageableListItem {
         }
     }
 
-    // Read a single desk allocation line and place it in the grid.
+    // read a single desk allocation line and place it in the grid.
     private void readDeskAllocation(BufferedReader br, Exam exam, int nthItem)
             throws RuntimeException {
         String deskLine = Utilities.getLine(br);

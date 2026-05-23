@@ -251,14 +251,14 @@ public class Unit implements StreamManager, ManageableListItem {
     }
 
     private String sanitiseDescription(String text) {
-        // Handle extra spaces
+        // handle extra spaces
         text = text.replaceAll("\\s+", " ");
         text = text.trim();
-        // Make sure starts with cap
+        // make sure starts with cap
         if (!text.isEmpty()) {
             text = Character.toUpperCase(text.charAt(0)) + text.substring(1);
         }
-        // Ensure ends with period
+        // ensure ends with period
         if (!text.isEmpty() && text.charAt(text.length() - 1) != '.') {
             text = text + ".";
         }
