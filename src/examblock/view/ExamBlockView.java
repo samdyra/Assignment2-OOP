@@ -46,55 +46,55 @@ public class ExamBlockView implements ModelObserver {
         }
     }
 
-    /** The top level window frame. */
+    /** rhe top level window frame. */
     private final JFrame frame;
 
-    /** Reference to the model in MVC. */
+    /** reference to the model in MVC. */
     private ExamBlockModel model;
 
-    /** The global registry for all items. */
+    /** global registry for all items. */
     private final Registry registry;
 
-    /** The exam table in the top left panel. */
+    /** exam table in the top left panel. */
     private JTable examTable;
 
-    /** The table model for the exam table. */
+    /** table model for the exam table. */
     private DefaultTableModel examTableModel;
 
-    /** The session/venue tree in the top middle panel. */
+    /** session/venue tree in the top middle panel. */
     private JTree tree;
 
-    /** The root node of the session tree. */
+    /** root node of the session tree. */
     private DefaultMutableTreeNode sessionRoot;
 
-    /** The venue root node under "Create a new session". */
+    /** venue root node under "Create a new session". */
     private DefaultMutableTreeNode venueRoot;
 
-    /** The Finalise button in the Go panel. */
+    /** finalise button in the Go panel. */
     private JButton finaliseButton;
 
-    /** The Add button in the Go panel. */
+    /** add button in the Go panel. */
     private JButton addButton;
 
-    /** The Clear button in the Go panel. */
+    /** clear button in the Go panel. */
     private JButton clearButton;
 
-    /** The tabbed pane in the bottom panel. */
+    /** tabbed pane in the bottom panel. */
     private JTabbedPane tabbedPane;
 
-    /** Mapping from exam table row index to Exam object. */
+    /** mapping from exam table row index to Exam object. */
     private final Map<Integer, Exam> examMap;
 
-    /** Mapping from tree session node to Session object. */
+    /** mapping from tree session node to Session object. */
     private final Map<DefaultMutableTreeNode, Session> sessionNodeMap;
 
-    /** Mapping from tree venue node to Venue object. */
+    /** mapping from tree venue node to Venue object. */
     private final Map<DefaultMutableTreeNode, Venue> venueNodeMap;
 
-    /** Mapping from tree exam node to Exam object. */
+    /** mapping from tree exam node to Exam object. */
     private final Map<DefaultMutableTreeNode, Exam> examNodeMap;
 
-    /** Whether changes have been made since last finalise. */
+    /** whether changes have been made since last finalise. */
     private boolean dirty;
 
     /**
@@ -127,7 +127,7 @@ public class ExamBlockView implements ModelObserver {
     public JPanel createTopPanel() {
         final JPanel topPanel = new JPanel(new BorderLayout());
 
-        // Left: exam table with label
+        // left: exam table with label
         JPanel examPanel = new JPanel(new BorderLayout());
         JLabel examLabel = new JLabel("1. Select an Exam / Unit",
                 SwingConstants.CENTER);
@@ -174,7 +174,7 @@ public class ExamBlockView implements ModelObserver {
         buttonPanel.add(goLabel);
         buttonPanel.add(Box.createVerticalStrut(20));
 
-        finaliseButton = new JButton("Finalize");
+        finaliseButton = new JButton("Finalise");
         finaliseButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         finaliseButton.setEnabled(false);
         buttonPanel.add(finaliseButton);
@@ -231,19 +231,8 @@ public class ExamBlockView implements ModelObserver {
         frame.setVisible(true);
     }
 
-    /**
-     * Update button enabled states based on current selections.
-     */
-    private void updateButtonStates() {
-        boolean examSelected = examTable.getSelectedRow() >= 0;
-        boolean venueSelected = tree.getSelectionPath() != null;
 
-        clearButton.setEnabled(examSelected);
-        addButton.setEnabled(examSelected && venueSelected);
-        finaliseButton.setEnabled(dirty);
-    }
-
-    // ==================== Update methods ====================
+    // setters
 
     /**
      * remove old content and load new content
@@ -259,7 +248,7 @@ public class ExamBlockView implements ModelObserver {
             int aaraCount = 0;
             int nonAaraCount = 0;
 
-            // Use model's student list, not stale registry
+            // use models student list, not stale registry
             for (Student student : model.getStudents().all()) {
                 for (Subject studentSubject
                         : student.getSubjects().all()) {
@@ -293,14 +282,14 @@ public class ExamBlockView implements ModelObserver {
         venueNodeMap.clear();
         sessionNodeMap.clear();
 
-        // Existing sessions group
+        // existing sessions group
         if (sessions.size() > 0) {
             DefaultMutableTreeNode existingNode =
                     new DefaultMutableTreeNode(
                             "Existing sessions (" + sessions.size() + ")");
 
             for (Session session : sessions.all()) {
-                // Session node: date, time, venue
+                // session node: date, time, venue
                 DefaultMutableTreeNode sessionNode =
                         new DefaultMutableTreeNode(
                                 session.getDate() + " at "
@@ -309,14 +298,14 @@ public class ExamBlockView implements ModelObserver {
                                         + session.getVenue().venueId());
                 addSessionToSessionNodeMap(sessionNode, session);
 
-                // Exams group
+                // exams group
                 DefaultMutableTreeNode examsNode =
                         new DefaultMutableTreeNode(
                                 "Exams (" + session.getExams().size()
                                         + ")");
 
                 for (Exam exam : session.getExams()) {
-                    // Count students for this exam in this venue
+                    // count students for this exam in this venue
                     int studentCount = 0;
                     for (Student student : model.getStudents().all()) {
                         if (student.isAara()
@@ -346,7 +335,7 @@ public class ExamBlockView implements ModelObserver {
             sessionRoot.add(existingNode);
         }
 
-        // Create a new session with venues
+        // create new session with venues
         venueRoot = new DefaultMutableTreeNode("Create a new session");
         for (Venue venue : venues.all()) {
             DefaultMutableTreeNode venueNode =
@@ -361,7 +350,7 @@ public class ExamBlockView implements ModelObserver {
         sessionRoot.add(venueRoot);
 
         ((DefaultTreeModel) tree.getModel()).reload();
-        // Expand all nodes
+        // rxpand all nodes
         for (int i = 0; i < tree.getRowCount(); i++) {
             tree.expandRow(i);
         }
@@ -489,7 +478,7 @@ public class ExamBlockView implements ModelObserver {
     }
 
     /**
-     * here we receive the notifications that model sent us
+     * hhere we receive the notifications that model sent us
      *
      * @param property whatever it is
      */
@@ -537,7 +526,7 @@ public class ExamBlockView implements ModelObserver {
         this.model = model;
     }
 
-    // ==================== Listener methods ====================
+    // listeners
 
     /**
      * Add a listener for the Finalise button
@@ -566,10 +555,10 @@ public class ExamBlockView implements ModelObserver {
         clearButton.addActionListener(listener);
     }
 
-    // ==================== Getters ====================
+    // GETTERS
 
     /**
-     * get the top level window
+     * get the top level winmdow
      *
      * @return the frame handle
      */
@@ -729,7 +718,7 @@ public class ExamBlockView implements ModelObserver {
             if (child == venueRoot) {
                 continue;
             }
-            // Check if any exam node has no desk children
+            // check if any exam node has no desk children
             for (int j = 0; j < child.getChildCount(); j++) {
                 DefaultMutableTreeNode examNode =
                         (DefaultMutableTreeNode) child.getChildAt(j);
@@ -741,7 +730,7 @@ public class ExamBlockView implements ModelObserver {
         return false;
     }
 
-    // ==================== Map methods ====================
+    // map methods
 
     /**
      * mapping from list to item represented
@@ -817,19 +806,17 @@ public class ExamBlockView implements ModelObserver {
         return venueNodeMap.get(venueNode);
     }
 
-    /**
-     * Auto-size table columns to fit their content.
-     *
-     * @param table the table to resize
-     */
+
+    // auto size table cols to fit their content
     private void autoSizeColumns(JTable table) {
         for (int col = 0; col < table.getColumnCount(); col++) {
             int maxWidth;
-            // Check header width
+            // check header width
             String headerValue = table.getColumnName(col);
             maxWidth = table.getFontMetrics(table.getFont())
                     .stringWidth(headerValue) + 20;
-            // Check data width
+
+            // check data width
             for (int row = 0; row < table.getRowCount(); row++) {
                 Object value = table.getValueAt(row, col);
                 if (value != null) {
@@ -840,5 +827,15 @@ public class ExamBlockView implements ModelObserver {
             }
             table.getColumnModel().getColumn(col).setPreferredWidth(maxWidth);
         }
+    }
+
+    // update button enabled states based on current selections.
+    private void updateButtonStates() {
+        boolean examSelected = examTable.getSelectedRow() >= 0;
+        boolean venueSelected = tree.getSelectionPath() != null;
+
+        clearButton.setEnabled(examSelected);
+        addButton.setEnabled(examSelected && venueSelected);
+        finaliseButton.setEnabled(dirty);
     }
 }

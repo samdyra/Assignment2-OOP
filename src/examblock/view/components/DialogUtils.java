@@ -14,9 +14,9 @@ public class DialogUtils {
      * How to handle long lines of text in the TextViewer
      */
     public enum ViewerOptions {
-        /** horizontal scroll */
+        /** scroll the window to show the text */
         SCROLL,
-        /** wrap long lines mode */
+        /** wrap the text in the window */
         WRAP
     }
 
